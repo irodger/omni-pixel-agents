@@ -3,6 +3,8 @@ import type * as vscode from 'vscode';
 export interface AgentState {
   /** Push-only OPA agents have no Claude transcript and are restored by replay. */
   streamProvider?: string;
+  streamSessionId?: string;
+  streamAgentId?: string;
   opaAttention?: {
     name?: string;
     role?: string;

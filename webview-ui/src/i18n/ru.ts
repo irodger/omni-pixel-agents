@@ -1,4 +1,21 @@
 export const ru: Record<string, string> = {
+  'Open in IDE': 'Открыть в IDE',
+  'Open in VS Code': 'Открыть в VS Code',
+  'IDE availability cannot be detected here. Copy the folder path if opening is unsupported.':
+    'Наличие IDE здесь проверить нельзя. Если открытие недоступно, скопируйте путь к папке.',
+  'VS Code is installed on this computer and this folder is local.':
+    'VS Code установлен на этом компьютере, и папка находится здесь.',
+
+  'Copy link': 'Копировать ссылку',
+  'Link copied without access credentials.': 'Ссылка скопирована без данных доступа.',
+  'Link or fallback': 'Ссылка или пояснение',
+  'Share links are unavailable in this host. Open OPA in your browser.':
+    'В этом приложении ссылки недоступны. Откройте OPA в браузере.',
+  'Invalid or unsupported OPA link.': 'Некорректная или неподдерживаемая ссылка OPA.',
+  'Waiting for connection to resolve this link.': 'Для открытия ссылки ожидается подключение.',
+  'Linked target is unavailable. It may be missing or not visible in this session.':
+    'Объект по ссылке недоступен. Возможно, он отсутствует или не виден в этой сессии.',
+
   'Edit project office': 'Редактировать офис проекта',
   'Save project office': 'Сохранить офис проекта',
   'Discard unsaved project changes?': 'Отменить несохранённые изменения проекта?',

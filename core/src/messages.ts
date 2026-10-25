@@ -100,6 +100,8 @@ export interface OpaProjectSnapshot {
 export interface OpaAgentSnapshot {
   id: number;
   provider: string;
+  sessionId?: string;
+  sourceAgentId?: string;
   name: string;
   role?: string;
   status: OpaActivityStatus;
