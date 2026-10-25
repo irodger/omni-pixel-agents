@@ -142,6 +142,12 @@ export type OpaTaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
 
 export interface OpaExecution {
   runId: string;
+  executorId?: string;
+  provider?: string;
+  sessionId?: string;
+  sourceAgentId?: string;
+  usage?: OpaUsageRecord[];
+  outputTruncated?: boolean;
   state: string;
   journal: string;
   permissions?: OpaPermission[];
@@ -149,20 +155,6 @@ export interface OpaExecution {
   finishedAt?: number;
   output?: string;
   error?: string;
-  additionalProperties?: Record<string, any>;
-}
-
-export interface OpaPermission {
-  id: string;
-  title: string;
-  options: OpaPermissionOption[];
-  additionalProperties?: Record<string, any>;
-}
-
-export interface OpaPermissionOption {
-  optionId: string;
-  name: string;
-  kind: string;
   additionalProperties?: Record<string, any>;
 }
 
@@ -190,6 +182,20 @@ export interface OpaCost {
 }
 
 export type OpaCostKind = 'reported' | 'estimated';
+
+export interface OpaPermission {
+  id: string;
+  title: string;
+  options: OpaPermissionOption[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaPermissionOption {
+  optionId: string;
+  name: string;
+  kind: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface OpaExecutor {
   id: string;

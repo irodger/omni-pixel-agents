@@ -5,6 +5,7 @@ import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
+import { TaskSummary } from './TaskSummary.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
@@ -149,8 +150,10 @@ export function WorkPanel({
                 ))}
               </div>
             ))}
-          {task.execution.error && <p role="alert">{task.execution.error}</p>}
-          {task.execution.output && (
+          {task.execution.state === 'running' && task.execution.error && (
+            <p role="alert">{task.execution.error}</p>
+          )}
+          {task.execution.state === 'running' && task.execution.output && (
             <details>
               <summary>{t('Result')}</summary>
               <pre style={{ whiteSpace: 'pre-wrap' }}>{task.execution.output}</pre>
@@ -176,6 +179,7 @@ export function WorkPanel({
           )}
         </div>
       )}
+      <TaskSummary task={task} />
       <select
         ref={(element) => {
           const key = JSON.stringify([task.projectPath, task.id]);
