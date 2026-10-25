@@ -20,11 +20,39 @@ Open **Office decor → Edit project office** to edit an isolated draft with the
 
 Project editing has no live agent characters or directory-to-area assignment controls. Those remain outside this editor; editing a room cannot assign or launch agents.
 
-## Next increments
+## Planned local workflow backlog (2026-10-26)
+
+Planning only: the PR numbers below name intended increments, not delivered features or existing implementation PRs. Reviewed against [main b0f256e](https://github.com/irodger/omni-pixel-agents/commit/b0f256ed7ba2e97550621ab12c6e951d1f62ebb0), current FORMAT/ADAPTERS and repository issues; no existing feature issues were found. ACP, Ambient, passive Kanban and project office layouts/editor are already delivered and are not repeated here. Existing latest-run results, attention projections and producer/task journals are foundations, not a complete run/event history UI.
+
+Each linked issue contains scope, acceptance checks, migration/verification requirements and risks. S/M/L are relative complexity, not time estimates. Dependencies are prerequisites; numbering is the suggested review sequence, not a demand for a single large release.
+
+| Increment / issue | Result | Complexity | Depends on |
+| --- | --- | --- | --- |
+| PR1 [Deep Links](https://github.com/irodger/omni-pixel-agents/issues/10) | Stable navigation to project/task/session and supported IDE targets. | S–M | — |
+| PR2 [Task Summary](https://github.com/irodger/omni-pixel-agents/issues/11) | A final task card with evidence and next actions. | M | [PR1](https://github.com/irodger/omni-pixel-agents/issues/10) |
+| PR3 [Attention Lite](https://github.com/irodger/omni-pixel-agents/issues/12) | A focused Inbox over existing blocked/error/unread completion state. | S–M | [PR1](https://github.com/irodger/omni-pixel-agents/issues/10), [PR2](https://github.com/irodger/omni-pixel-agents/issues/11) |
+| PR4 [TaskRun History](https://github.com/irodger/omni-pixel-agents/issues/13) | Preserve task attempts independently of the latest execution field. | M | [PR2](https://github.com/irodger/omni-pixel-agents/issues/11) |
+| PR5 [Event History](https://github.com/irodger/omni-pixel-agents/issues/14) | Bounded durable local event retrieval using existing OPA journals. | M–L | [PR4](https://github.com/irodger/omni-pixel-agents/issues/13) |
+| PR6 [Timeline](https://github.com/irodger/omni-pixel-agents/issues/15) | Read-only chronological task/run/session activity with drill-down. | M | [PR1](https://github.com/irodger/omni-pixel-agents/issues/10), [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR5](https://github.com/irodger/omni-pixel-agents/issues/14) |
+| PR7 [Task Queue](https://github.com/irodger/omni-pixel-agents/issues/16) | Explicitly controlled local pending tasks without turning Kanban movement into dispatch. | M–L | [PR4](https://github.com/irodger/omni-pixel-agents/issues/13) |
+| PR8 [Attention v2](https://github.com/irodger/omni-pixel-agents/issues/17) | Durable unified Inbox for blocks, errors, completions and future check results. | M | [PR3](https://github.com/irodger/omni-pixel-agents/issues/12), [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR5](https://github.com/irodger/omni-pixel-agents/issues/14), [PR7](https://github.com/irodger/omni-pixel-agents/issues/16) |
+| PR9 [Git Context / worktrees](https://github.com/irodger/omni-pixel-agents/issues/18) | Verified Git context and one isolated worktree/branch per explicitly launched task. | L | [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR7](https://github.com/irodger/omni-pixel-agents/issues/16) |
+| PR10 [Diff Viewer](https://github.com/irodger/omni-pixel-agents/issues/19) | Review actual Git changes for a selected task run and worktree. | M–L | [PR1](https://github.com/irodger/omni-pixel-agents/issues/10), [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR9](https://github.com/irodger/omni-pixel-agents/issues/18) |
+| PR11 [Quality Gates](https://github.com/irodger/omni-pixel-agents/issues/20) | Evidence-backed local checks tied to the exact Git context. | L | [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR8](https://github.com/irodger/omni-pixel-agents/issues/17), [PR9](https://github.com/irodger/omni-pixel-agents/issues/18), [PR10](https://github.com/irodger/omni-pixel-agents/issues/19) |
+| PR12 [Portless / Local Preview](https://github.com/irodger/omni-pixel-agents/issues/21) | Optional local previews with stable per-worktree addresses and isolated ports. | M–L | [PR1](https://github.com/irodger/omni-pixel-agents/issues/10), [PR4](https://github.com/irodger/omni-pixel-agents/issues/13), [PR9](https://github.com/irodger/omni-pixel-agents/issues/18) |
+
+The seven product directions map to these increments: task summary (PR2/4), explicit queue (PR7), Git diff and quality gates (PR9–11), saved event history and timeline (PR4–6), deep links (PR1), Attention Mode / unified Inbox (PR3/8 plus PR11 check observations), and worktree-local preview (PR12). PR9 replaces the former broad **Isolated parallel work** entry; it must capture verified repo/cwd/worktree/base/head context, retain dirty work and leave merge decisions to a human. Worktree isolation alone does not raise the one-run-per-project limit.
+
+PR7 deliberately changes today's save-new-assignment launch contract: prepare/enqueue stays passive and a separate explicit Start dispatches once. The implementation must document and test UI/API migration; until then, current launch semantics remain unchanged. No automatic queue drain or crash resume is included. PR8 defines check-result Inbox inputs; PR11 supplies actual check evidence, avoiding a dependency cycle.
+
+Portless remains optional. PR12 starts with upstream/version/Node capability verification against OPA's current Node >=20 requirement, then approved local HTTP previews with unique per-worktree ports/addresses and owned-process cleanup. Missing/incompatible dependencies must not break OPA. WebSocket/HMR and HTTPS are conditional on verified support; no public tunnel, external bind, silent install, certificate trust changes or arbitrary unapproved commands.
+
+Shared acceptance boundaries: no automatic merge/commit/push or destructive cleanup; no unconfirmed paid restart or hidden executor fallback; no invented tests, events, costs or transport capabilities. Diff and checks bind to actual worktree/commit and dirty context; changes make prior evidence stale. Reads, navigation, acknowledgement, event replay and passive Kanban moves cannot execute commands or answer permissions. Retain host authentication and source-agent permission controls. No remote SaaS/Hub/Runner, universal bundled AI or «Войти Вайти» integration is planned in this backlog.
+
+## Other future increments
 
 | Increment              | Intended result                                             | Required acceptance before calling it done                                                                                                                       |
 | ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Isolated parallel work | One Git worktree/branch per explicitly launched task        | Verify repository/cwd; retain dirty work; human reviews diff and chooses merge; conflicts remain visible; no automatic commit/push/merge or destructive cleanup  |
 | Rest room              | A visual place for agents explicitly reporting a rate limit | Structured provider signal and provenance; reset time only when known; unknown deadlines have no fabricated countdown; retry/resume stays human initiated        |
 | More agents            | Verified Copilot, Kilo, Gemini, Qwen and Pi contracts       | Official invocation/schema, captured fixtures and capability matrix; ACP only if actually supported; missing functionality stays unavailable rather than guessed |
 | Portable history       | Independent producers/visualizers agree on OPA              | Versioned conformance fixtures, replay/idempotency checks and public RFC; no claim of an industry standard before independent implementations exist              |
