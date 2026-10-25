@@ -258,4 +258,25 @@ export const ru: Record<string, string> = {
   'Powered by Claude Code': 'Работает с Claude Code',
   "Hooks couldn't be installed": 'Не удалось установить хуки',
   "You're all set!": 'Всё готово!',
+  'Choosing an executor starts the task in its project. Agent usage may incur costs.':
+    'Выбор исполнителя запускает задачу в её проекте. Работа агента может расходовать платный лимит.',
+  Unavailable: 'Недоступен',
+  Execution: 'Выполнение',
+  Result: 'Результат',
+  'Retry task': 'Запустить повторно',
+  running: 'Выполняется',
+  completed: 'Завершено',
+  failed: 'Ошибка',
+  interrupted: 'Прервано',
+  cancelled: 'Отменено',
+  EXECUTOR_UNAVAILABLE: 'Этот исполнитель недоступен. Установите клиент и перезапустите OPA.',
+  PROJECT_UNAVAILABLE: 'Папка проекта недоступна на сервере.',
+  PROJECT_BUSY: 'В этом проекте уже выполняется задача. Дождитесь завершения.',
+  TASK_RUNNING: 'Задача выполняется. Чтобы остановить её, выберите «Отменена».',
+  LAUNCH_FAILED: 'Не удалось запустить агента. Задача сохранена.',
+  'No installed executors found. Install Codex or OpenCode and restart OPA.':
+    'Исполнители не найдены. Установите Codex или OpenCode и перезапустите OPA.',
+  'Project folder': 'Папка проекта',
+  'Select an office above or enter an existing project folder.':
+    'Выберите офис выше или укажите существующую папку проекта.',
 };

@@ -38,3 +38,12 @@ Preview: `http://127.0.0.1:3101/`, with demonstration events only. No real user 
 - After server restart all three observations and Russian language remained visible. Durable replay/replacement, revision conflicts, storage failure acknowledgements, authenticated REST and tokenless WebSocket denial are covered by tests. File adapter tests reopen the actual saved state alongside seats/projects.
 - No paid agent execution or real billing was used. Assignment does not dispatch work. VS Code transport compiles and shares the task services, but its native UI was not exercised.
 - Screenshots: `/private/tmp/opa-tasks-ru.png`, `/private/tmp/opa-usage-ru.png`.
+
+## Executor dispatch
+
+- 753 server tests (42 files) and 204 UI tests passed; final focused execution/CLI/client-handler tests: 87 passed. Build passes with the inherited hook dependency and chunk-size warnings.
+- Five process fixtures verify assignment launches, idempotent create, per-project exclusion, result/usage ingestion and journals, failed exit/retry, cancellation, missing directories/executors and the separate OpenCode run JSON translation. No paid model call is used.
+- Executor discovery checks host PATH and a successful `--version`; authentication/quota is checked by the actual client at launch. In this environment the installed OpenCode binary exited with signal 9 during manual help, so it must not be represented as a verified live integration.
+- CLI `--no-terminal` now describes embedded terminals only; authenticated task dispatch is a separate process capability. Source journal task events remain inert metadata and do not dispatch on replay.
+
+- Browser dispatch verification used a separate server on port 3102 and an explicit fake Codex executable, isolated home/project, no model calls. Selecting Codex and saving the task changed it to in progress, then done; the returned fixture text was visible in the task. Screenshot: `/private/tmp/opa-auto-assignment.png`. The regular port 3101 preview retains real executable discovery.

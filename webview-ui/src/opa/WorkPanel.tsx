@@ -27,6 +27,7 @@ export function WorkPanel({
 }) {
   const { language } = useLanguage();
   const [title, setTitle] = useState('');
+  const [newProject, setNewProject] = useState('');
   const [assignee, setAssignee] = useState('');
   const [editing, setEditing] = useState<OpaTask | null>(null);
   const [pending, setPending] = useState(false);
@@ -77,7 +78,7 @@ export function WorkPanel({
           className="opa-task-form"
           onSubmit={async (event) => {
             event.preventDefault();
-            const projectPath = editing?.projectPath ?? projectId;
+            const projectPath = editing?.projectPath ?? projectId ?? newProject.trim();
             if (!projectPath || disabled) return;
             if (
               await send({
@@ -95,6 +96,19 @@ export function WorkPanel({
             }
           }}
         >
+          {!projectId && !editing && (
+            <label>
+              {t('Project folder')}
+              <input
+                aria-label={t('Project folder')}
+                value={newProject}
+                disabled={disabled}
+                placeholder="/path/to/project"
+                onChange={(e) => setNewProject(e.target.value)}
+                required
+              />
+            </label>
+          )}
           <label>
             {editing ? t('Edit task') : t('New task')}
             <input
@@ -108,27 +122,28 @@ export function WorkPanel({
           </label>
           <label>
             {t('Assignee')}
-            <input
+            <select
               aria-label={t('Assignee')}
-              list="opa-assignees"
               value={assignee}
-              maxLength={200}
               disabled={disabled}
-              placeholder={t('Unassigned')}
               onChange={(e) => setAssignee(e.target.value)}
-            />
-          </label>
-          <datalist id="opa-assignees">
-            {campus.projects
-              .filter((p) => !projectId || p.id === projectId)
-              .flatMap((p) => p.agents)
-              .map((a) => (
-                <option key={a.id} value={`${a.name} (${a.provider})`} />
+            >
+              <option value="">{t('Unassigned')}</option>
+              {campus.executors.map((executor) => (
+                <option key={executor.id} value={executor.id}>
+                  {executor.name}
+                </option>
               ))}
-          </datalist>
+              {assignee && !campus.executors.some((e) => e.id === assignee) && (
+                <option value={assignee} disabled>
+                  {assignee} — {t('Unavailable')}
+                </option>
+              )}
+            </select>
+          </label>
           <button
             className="opa-button"
-            disabled={disabled || !title.trim() || (!projectId && !editing)}
+            disabled={disabled || !title.trim() || (!projectId && !editing && !newProject.trim())}
           >
             {editing ? t('Save changes') : t('Add task')}
           </button>
@@ -147,10 +162,19 @@ export function WorkPanel({
             </button>
           )}
         </form>
-        {!projectId && !editing && <p className="opa-notice">{t('Choose a project first.')}</p>}
+        {!projectId && !editing && (
+          <p className="opa-notice">
+            {t('Select an office above or enter an existing project folder.')}
+          </p>
+        )}
         <p className="opa-muted">
-          {t('Assignment records ownership; it does not launch an agent.')}
+          {t('Choosing an executor starts the task in its project. Agent usage may incur costs.')}
         </p>
+        {!campus.executors.length && (
+          <p className="opa-notice">
+            {t('No installed executors found. Install Codex or OpenCode and restart OPA.')}
+          </p>
+        )}
         {error && (
           <p className="opa-error-detail" role="alert">
             {t(error)}
@@ -185,9 +209,44 @@ export function WorkPanel({
                 <div>
                   <h3>{task.title}</h3>
                   <p className="opa-muted">
-                    {projectName(task.projectPath)} · {task.assignee || t('Unassigned')}
+                    {projectName(task.projectPath)} ·{' '}
+                    {campus.executors.find((e) => e.id === task.assignee)?.name ||
+                      task.assignee ||
+                      t('Unassigned')}
                   </p>
                 </div>
+                {task.execution && (
+                  <div className="opa-muted">
+                    <p>
+                      {t('Execution')}: {t(task.execution.state)}
+                    </p>
+                    {task.execution.error && <p role="alert">{task.execution.error}</p>}
+                    {task.execution.output && (
+                      <details>
+                        <summary>{t('Result')}</summary>
+                        <pre style={{ whiteSpace: 'pre-wrap' }}>{task.execution.output}</pre>
+                      </details>
+                    )}
+                    {['failed', 'interrupted', 'cancelled'].includes(task.execution.state) && (
+                      <button
+                        className="opa-button"
+                        disabled={disabled || !campus.executors.some((e) => e.id === task.assignee)}
+                        onClick={() =>
+                          void send({
+                            action: 'update',
+                            projectPath: task.projectPath,
+                            taskId: task.id,
+                            expectedRevision: task.revision,
+                            launch: true,
+                            status: 'open',
+                          })
+                        }
+                      >
+                        {t('Retry task')}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <select
                   aria-label={`${t('Task status')}: ${task.title}`}
                   value={task.status}

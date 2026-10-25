@@ -44,8 +44,8 @@ export interface CliArgs {
    *  can run at once without a collision. --port picks a fixed one. */
   port?: number;
   host: string;
-  /** False when --no-terminal was passed: the office only watches agents; the
-   *  browser can neither launch them nor attach to their terminals. */
+  /** False when --no-terminal was passed: embedded terminal launches and attachments are disabled.
+   *  OPA task execution uses separate noninteractive processes. */
   terminal: boolean;
   /** --allowed-host names (repeatable): extra Host names, beyond loopback and a
    *  specific --host, that a tokened browser session is privileged under --
@@ -113,8 +113,7 @@ Options:
                         it, only localhost and a specific --host are privileged
   --rotate-token        Replace the server token. Every URL that carried the
                         old one (bookmarks, other devices) stops working
-  --no-terminal         Disable the embedded terminal (watch agents only; no
-                        launching or attaching from the browser)
+  --no-terminal         Disable the embedded terminal (OPA task execution remains available)
   --help                Show this help message`);
       process.exit(0);
     }
@@ -166,7 +165,7 @@ function reportTerminalStatus(
 ): void {
   if (!enabledByFlag) {
     console.log(
-      '[Pixel Agents] Terminal disabled (--no-terminal): agents can be watched but not launched from the browser.',
+      '[Pixel Agents] Terminal disabled (--no-terminal): embedded terminal launches and attachments are unavailable. OPA task execution remains available.',
     );
     return;
   }

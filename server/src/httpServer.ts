@@ -20,8 +20,9 @@ import {
   WS_CLOSE_UNAUTHORIZED,
 } from './constants.js';
 import { opaCampusSnapshot } from './opa/campus.js';
+import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { OpaOffice } from './opa/office.js';
-import { changeTask, opaWorkSnapshot, WorkError } from './opa/work.js';
+import { opaWorkSnapshot, WorkError } from './opa/work.js';
 import { toPathKey } from './pathKey.js';
 import type { PtySessionManager } from './terminal/ptySessionManager.js';
 import { registerTerminalRoutes } from './terminal/terminalRoutes.js';
@@ -111,6 +112,9 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   const host = options.host ?? '127.0.0.1';
   const allowedHostnames = privilegedHostnames(host, options.allowedHosts ?? []);
 
+  app.addHook('onClose', async () => {
+    stopTaskExecutions(options.store);
+  });
   registerHealthRoute(app);
   app.get<{ Querystring: { projectPath?: string } }>(
     '/api/opa/tasks',
@@ -131,7 +135,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
     { preHandler: bearerAuth(options.token) },
     async (request, reply) => {
       try {
-        const task = changeTask(options.store, request.body ?? {});
+        const task = executeTaskCommand(options.store, request.body ?? {});
         options.store.broadcast({ ...opaCampusSnapshot(options.store) });
         return { task };
       } catch (error) {

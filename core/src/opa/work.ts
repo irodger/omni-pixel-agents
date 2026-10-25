@@ -6,6 +6,15 @@ export interface OpaTask {
   title: string;
   status: TaskStatus;
   assignee?: string;
+  execution?: {
+    runId: string;
+    state: string;
+    journal: string;
+    startedAt: number;
+    finishedAt?: number;
+    output?: string;
+    error?: string;
+  };
   createdAt: number;
   updatedAt: number;
   revision: number;
@@ -39,6 +48,7 @@ export type OpaTaskCommand = {
   status?: TaskStatus;
   assignee?: string;
   expectedRevision?: number;
+  launch?: boolean;
 };
 
 export const taskStatuses: readonly TaskStatus[] = ['open', 'in_progress', 'done', 'cancelled'];

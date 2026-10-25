@@ -77,7 +77,7 @@ Usage is durable by `(provider, sessionId, usageId)`, independent of ephemeral s
 
 Codex `turn.completed.usage` supplies tokens, without an invented price/model. OpenCode completed assistant `message.updated` supplies a stable message ID, `time.completed`, model, tokens and optional cost. The official `@opencode-ai/sdk` 1.19.4 declaration was checked: source input plus cache read/write becomes OPA total input; output plus reasoning becomes total output. OpenCode cost is classified as estimated. Sources must provide per-observation counts, not repeatedly append cumulative session totals.
 
-`task.upserted` carries `cwd`, `taskId` (1–200 characters), `title` (1–2,000 characters), `status` (`open`, `in_progress`, `done`, `cancelled`) and optional `assignee` (up to 200 characters). IDs/titles must contain non-whitespace text. The host stores creation/update times and a revision. Older source updates cannot overwrite newer human edits. Assignment is a label, not an execution command. Cancellation retains history; deletion is not exposed.
+`task.upserted` carries `cwd`, `taskId` (1–200 characters), `title` (1–2,000 characters), `status` (`open`, `in_progress`, `done`, `cancelled`) and optional `assignee` (up to 200 characters). IDs/titles must contain non-whitespace text. The host stores creation/update times and a revision. Older source updates cannot overwrite newer human edits. In journal events assignment is metadata; replay never dispatches execution. Cancellation retains history; deletion is not exposed.
 
 ### Shared task API
 
@@ -89,10 +89,10 @@ Authenticated `GET /api/opa/tasks?projectPath=/absolute/project` reads tasks (om
   "requestId": "unique-request-id",
   "projectPath": "/absolute/project",
   "title": "Review adapters",
-  "assignee": "Codex"
+  "assignee": "codex"
 }
 ```
 
-For updates send `action: "update"`, `taskId`, `expectedRevision`, a unique `requestId`, `projectPath` and changed title/assignee/status. Empty assignee clears ownership. Repeating the same create request is idempotent. Invalid commands return 400, revision conflicts 409 and storage failures 503. WebSocket clients use `opaTaskCommand`/`opaTaskResult` and receive complete `opaWorkState` snapshots on connect and changes. Tokenless clients may observe but cannot change tasks. No MCP setup or automatic agent dispatch is installed.
+For updates send `action: "update"`, `taskId`, `expectedRevision`, a unique `requestId`, `projectPath` and changed title/assignee/status. Empty assignee clears ownership. Repeating the same create request is idempotent. Invalid commands return 400, revision conflicts 409 and storage failures 503. WebSocket clients use `opaTaskCommand`/`opaTaskResult` and receive complete `opaWorkState` snapshots on connect and changes. Tokenless clients may observe but cannot change tasks. No MCP setup is installed. Authenticated task commands with a new nonempty assignment (`codex` or `opencode`) dispatch a local run; journal ingestion never does. `opaWorkState.executors` lists installed runnable clients. Explicit retries use `launch: true` and the current revision. A task record optionally includes `execution` with runId, state, journal, timestamps, bounded output/error. Status edits do not rerun tasks; cancelled status stops an active process. Server restart exposes stale running markers as interrupted without relaunch.
 
 The file adapter persists `opaWork` in the existing host state JSON, preserving seats and projects. Arrays and full snapshots are currently unbounded: pagination, ledger compaction and budgets remain future work. Language and read marks are browser-local; tasks and usage are shared host data. Date filters use the viewing browser's local calendar. CSV leaves unknown costs empty and escapes spreadsheet formulas in text cells.

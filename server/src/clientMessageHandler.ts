@@ -22,7 +22,8 @@ import { collectDirectorySuggestions } from './directorySuggestions.js';
 import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { opaCampusSnapshot } from './opa/campus.js';
-import { changeTask, opaWorkSnapshot, WorkError } from './opa/work.js';
+import { executeTaskCommand } from './opa/execution.js';
+import { opaWorkSnapshot, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from './providers/hook/consentGate.js';
@@ -140,7 +141,7 @@ export function handleClientMessage(
   switch (msg.type) {
     case 'opaTaskCommand':
       try {
-        const task = changeTask(store, msg);
+        const task = executeTaskCommand(store, msg);
         send({ type: 'opaTaskResult', requestId: msg.requestId, taskId: task.id });
         store.broadcast({ ...opaCampusSnapshot(store) });
       } catch (error) {

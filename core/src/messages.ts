@@ -117,6 +117,7 @@ export interface OpaWorkState {
   type: 'opaWorkState';
   tasks: OpaTaskRecord[];
   usage: OpaUsageRecord[];
+  executors?: OpaExecutor[];
   additionalProperties?: Record<string, any>;
 }
 
@@ -126,6 +127,7 @@ export interface OpaTaskRecord {
   title: string;
   status: OpaTaskStatus;
   assignee?: string;
+  execution?: OpaExecution;
   createdAt: number;
   updatedAt: number;
   revision: number;
@@ -133,6 +135,17 @@ export interface OpaTaskRecord {
 }
 
 export type OpaTaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
+
+export interface OpaExecution {
+  runId: string;
+  state: string;
+  journal: string;
+  startedAt: number;
+  finishedAt?: number;
+  output?: string;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface OpaUsageRecord {
   usageId: string;
@@ -158,6 +171,12 @@ export interface OpaCost {
 }
 
 export type OpaCostKind = 'reported' | 'estimated';
+
+export interface OpaExecutor {
+  id: string;
+  name: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface OpaTaskResult {
   type: 'opaTaskResult';
@@ -476,6 +495,7 @@ export interface OpaTaskCommand {
   status?: OpaTaskStatus;
   assignee?: string;
   expectedRevision?: number;
+  launch?: boolean;
   additionalProperties?: Record<string, any>;
 }
 

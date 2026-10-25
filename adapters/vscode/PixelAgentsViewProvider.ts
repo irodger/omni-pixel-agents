@@ -48,7 +48,8 @@ import {
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
 import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
-import { changeTask, opaWorkSnapshot, WorkError } from '../../server/src/opa/work.js';
+import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
+import { opaWorkSnapshot, WorkError } from '../../server/src/opa/work.js';
 import { PathSet } from '../../server/src/pathKey.js';
 import type { ConsentEffects } from '../../server/src/providers/hook/consentExecutor.js';
 import { applyConsentChoice } from '../../server/src/providers/hook/consentExecutor.js';
@@ -464,7 +465,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage(async (message) => {
       if (message.type === 'opaTaskCommand') {
         try {
-          const task = changeTask(this.store, message);
+          const task = executeTaskCommand(this.store, message);
           this.webview?.postMessage({
             type: 'opaTaskResult',
             requestId: message.requestId,
@@ -1149,6 +1150,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
   }
 
   dispose() {
+    stopTaskExecutions(this.store);
     this.pixelAgentsServer?.stop();
     this.pixelAgentsServer = null;
     this.runtime.dispose();

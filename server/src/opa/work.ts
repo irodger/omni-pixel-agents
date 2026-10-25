@@ -12,6 +12,7 @@ import { isTask, isUsage, taskStatuses } from '../../../core/src/opa/work.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { registerOpaProject } from './campus.js';
+import { availableExecutors, isTaskRunning } from './execution.js';
 
 const states = new WeakMap<AgentStateStore, OpaWorkData>();
 function state(store: AgentStateStore): OpaWorkData {
@@ -25,7 +26,16 @@ function state(store: AgentStateStore): OpaWorkData {
 }
 export function opaWorkSnapshot(store: AgentStateStore) {
   const data = state(store);
-  return { type: 'opaWorkState' as const, tasks: data.tasks, usage: data.usage };
+  return {
+    type: 'opaWorkState' as const,
+    tasks: data.tasks.map((task) =>
+      task.execution?.state === 'running' && !isTaskRunning(store, task)
+        ? { ...task, execution: { ...task.execution, state: 'interrupted' } }
+        : task,
+    ),
+    usage: data.usage,
+    executors: availableExecutors().map(({ id, name }) => ({ id, name })),
+  };
 }
 function save(store: AgentStateStore, data: OpaWorkData): void {
   // Commit before publication. A failed write must not acknowledge lost work.
@@ -128,6 +138,7 @@ export function applyWorkEvent(store: AgentStateStore, event: OpaEvent): boolean
   if (event.type === 'task.upserted') {
     const projectPath = toPathKey(event.cwd);
     const previous = data.tasks.find((t) => t.id === event.taskId && t.projectPath === projectPath);
+    if (previous && isTaskRunning(store, previous)) return false;
     const occurredAt = Math.min(Date.now(), Date.parse(event.timestamp));
     if (previous && previous.updatedAt > occurredAt) return false;
     if (
@@ -158,4 +169,29 @@ export function applyWorkEvent(store: AgentStateStore, event: OpaEvent): boolean
     return true;
   }
   return false;
+}
+
+export function updateTaskExecution(
+  store: AgentStateStore,
+  task: OpaTask,
+  execution: NonNullable<OpaTask['execution']>,
+  status: TaskStatus,
+) {
+  const data = state(store);
+  const current = data.tasks.find((t) => t.id === task.id && t.projectPath === task.projectPath);
+  if (
+    !current ||
+    (current.execution &&
+      current.execution.runId !== execution.runId &&
+      execution.state !== 'running')
+  )
+    return;
+  save(store, {
+    ...data,
+    tasks: data.tasks.map((t) =>
+      t === current
+        ? { ...t, execution, status, updatedAt: Date.now(), revision: t.revision + 1 }
+        : t,
+    ),
+  });
 }

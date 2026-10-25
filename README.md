@@ -16,7 +16,7 @@ npm run build
 node dist/cli.js --port 3100 --no-terminal
 ```
 
-Open the URL printed by the server. Its token is used by the event bridge. `--no-terminal` makes this an observation-only office; Codex and OpenCode run in your existing terminal.
+Open the URL printed by the server. Its token is used by the event bridge. `--no-terminal` disables embedded terminal launches/attachments. Task assignment can still start noninteractive Codex/OpenCode processes.
 
 ## Project campus and attention
 
@@ -32,7 +32,11 @@ Project paths live in `opaProjects` in the host's existing `~/.pixel-agents/<nam
 
 Switch between English and Russian in the header; this browser remembers the choice. User content, paths and source messages retain their original language.
 
-**Tasks** stores a shared project backlog: title, assignee label and status (open, in progress, done, cancelled). Select a project before creating a task. Assignment records ownership; it does not launch an agent. Changes are acknowledged after storage and protected against overwriting a newer revision. The management URL printed by the server enables editing; tokenless connections are read-only.
+**Tasks** stores a shared project backlog: title, executor and status (open, in progress, done, cancelled). Select a project before creating a task. Choose an installed, runnable Codex/OpenCode client from the executor list: saving a new assignment starts it automatically in that project. The task title is the prompt. Existing credentials/model settings are used; usage may incur costs. Changes are acknowledged after storage and protected against overwriting a newer revision. The management URL printed by the server enables editing; tokenless connections are read-only.
+
+Execution changes the task to in progress, then done only after a successful completion event and process exit. Results and launch failures appear on the task; failed/interrupted tasks can be retried explicitly. Cancelling terminates the running process (and its process group on POSIX). Only one OPA task runs in a project at a time. Title edits/status changes do not silently rerun a completed assignment. Replayed `task.upserted` events never launch processes.
+
+Executors are discovered on the host PATH and checked with `--version`; this does not verify account authentication or quota. Codex runs `exec --json --sandbox workspace-write` with the prompt on stdin; no approval/sandbox bypass is added. OpenCode runs `run --format json` under its existing local permission configuration. Both reuse local credentials and defaults. Each run writes a normalized journal under `~/.pixel-agents/opa-runs/`. A server crash marks persisted running tasks interrupted; OPA never automatically retries a potentially paid run on restart.
 
 **Usage & costs** filters observations by project and calendar period, totals tokens, separates source-reported amounts from estimates, and exports CSV. Missing prices remain unknown, including Codex token-only records. A reported amount is source data, not proof of an invoice. Current monetary records use USD; no price table or currency conversion is inferred.
 
@@ -85,7 +89,7 @@ Replay sends events in file order, without timing delays. The running server ign
 - [Sample Codex stream](examples/opa/codex.jsonl)
 - [Original upstream documentation](README.upstream.md)
 
-The protocol is a draft, not an established industry standard. The current office shows activity and provider labels. Role/parent metadata is portable but does not yet create role-specific sprites or parent-child visual links. Messages remain in the journal rather than a chat/history panel; the campus shows turn errors in agent details. The `+ Agent` browser action still launches the upstream Claude integration; Codex/OpenCode use the connections above.
+The protocol is a draft, not an established industry standard. The current office shows activity and provider labels. Role/parent metadata is portable but does not yet create role-specific sprites or parent-child visual links. Messages remain in the journal rather than a chat/history panel; the campus shows turn errors in agent details. The `+ Agent` browser action still launches the upstream Claude integration; Codex/OpenCode use task assignment or the connections above.
 
 ## Checks
 

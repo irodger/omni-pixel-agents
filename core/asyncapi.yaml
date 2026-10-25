@@ -1525,6 +1525,24 @@ components:
         type: { type: string, const: opaWorkState }
         tasks: { type: array, items: { $ref: '#/components/schemas/OpaTaskRecord' } }
         usage: { type: array, items: { $ref: '#/components/schemas/OpaUsageRecord' } }
+        executors: { type: array, items: { $ref: '#/components/schemas/OpaExecutor' } }
+    OpaExecutor:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+    OpaExecution:
+      type: object
+      required: [runId, state, journal, startedAt]
+      properties:
+        runId: { type: string }
+        state: { type: string }
+        journal: { type: string }
+        startedAt: { type: number }
+        finishedAt: { type: number }
+        output: { type: string }
+        error: { type: string }
     OpaTaskRecord:
       type: object
       required: [id, projectPath, title, status, createdAt, updatedAt, revision]
@@ -1534,6 +1552,7 @@ components:
         title: { type: string }
         status: { $ref: '#/components/schemas/OpaTaskStatus' }
         assignee: { type: string }
+        execution: { $ref: '#/components/schemas/OpaExecution' }
         createdAt: { type: number }
         updatedAt: { type: number }
         revision: { type: integer }
@@ -1579,6 +1598,7 @@ components:
         status: { $ref: '#/components/schemas/OpaTaskStatus' }
         assignee: { type: string }
         expectedRevision: { type: number }
+        launch: { type: boolean }
     OpaTaskAction:
       type: string
       enum: [create, update]
