@@ -528,7 +528,7 @@ export interface OpaTaskCommand {
   additionalProperties?: Record<string, any>;
 }
 
-export type OpaTaskAction = 'create' | 'update' | 'permission';
+export type OpaTaskAction = 'create' | 'update' | 'permission' | 'move';
 
 export interface WebviewReady {
   type: 'webviewReady';

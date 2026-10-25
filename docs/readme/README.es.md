@@ -12,6 +12,8 @@ Mira qué proyecto avanza, qué agente necesita tu atención y qué recursos con
 
 - Una oficina por proyecto, con actividad de Codex y OpenCode en la misma vista.
 - Solicitudes de permisos, errores y resultados sin leer. Las autorizaciones del agente de origen se responden en su propio cliente.
+- Observa un proyecto en Office/Ambient, con pantalla completa opcional y salida con Escape.
+- Organiza tareas en lista o kanban. Arrastrar o elegir un estado no inicia ni detiene agentes.
 - Lista compartida de tareas: elige un ejecutor disponible y guarda la nueva asignación para iniciarlo. El resultado, la cancelación y el reintento explícito quedan en la tarea.
 - Tokens y costes informados o estimados por proyecto y periodo. Exportación CSV; un precio ausente sigue siendo desconocido.
 - Interfaz en inglés y ruso. Este README también está disponible en alemán y español.
@@ -47,6 +49,10 @@ Las solicitudes de permisos ACP se responden explícitamente en la tarea; las au
 
 Interfaz real de OPA capturada localmente con tareas de prueba y consumo sintético identificados. No representa sesiones de pago ni facturas. Las imágenes pueden mostrar una revisión anterior de la interfaz.
 
+![OPA — Office / Ambient](../../docs/images/ambient.png)
+
+![OPA — Kanban](../../docs/images/kanban.png)
+
 ![OPA — task execution fixture](../../docs/images/task-run.png)
 
 ![OPA — synthetic usage and costs](../../docs/images/usage.png)
@@ -57,7 +63,7 @@ OPA es un fork local que se compila desde el código fuente. No hay publicación
 
 ## Hoja de ruta
 
-Office/Ambient a pantalla completa; kanban sin ejecutar al arrastrar; diseños independientes editables; Git worktrees aislados con fusiones revisadas; sala de descanso con límites de uso fiables; adaptadores verificados para Copilot, Kilo, Gemini, Qwen y Pi. Son planes, no integraciones terminadas.
+Diseños independientes editables; Git worktrees aislados con fusiones revisadas; sala de descanso con límites de uso fiables; adaptadores verificados para Copilot, Kilo, Gemini, Qwen y Pi. Son planes, no integraciones terminadas.
 
 ## Guías y desarrollo
 

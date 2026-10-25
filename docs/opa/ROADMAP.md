@@ -1,11 +1,19 @@
 # OPA roadmap and acceptance boundaries
 
-This is a plan, not a feature inventory. The current increment is the four-language product README and extensible native/ACP v1 adapters; see [implemented adapter surfaces](ADAPTERS.md).
+This document separates delivered increments from future work. The product overview and native/ACP v1 adapters are already delivered; see [implemented adapter surfaces](ADAPTERS.md).
+
+## Delivered: Office / Ambient and Kanban (2026-10-26)
+
+- Ambient shows one selected project in a window-filling view, with optional browser fullscreen. Controls, connection state, attention counts and an explicit exit remain visible. Escape exits, focus returns to the entry button, and keyboard focus stays within the mode. Project switching and passive viewing neither acknowledge results nor send execution commands.
+- Tasks have List/Board views, with a remembered browser preference and four status columns. Drag/drop and keyboard/touch status selectors use the same revision-checked passive `move` command. A move cannot change assignment, launch a run or cancel one. Running cards cannot move; their explicit Stop agent button retains cancellation control. Stale cards fail instead of overwriting newer work.
+- Reconnecting WebSockets request a fresh snapshot without repeating already-sent task commands. Missing connection remains visible in Ambient.
+
+Screenshots use labelled demo events/tasks, not live model runs: [Ambient](../images/ambient.png), [Kanban](../images/kanban.png).
+
+## Next increments
 
 | Increment              | Intended result                                             | Required acceptance before calling it done                                                                                                                       |
 | ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Office / Ambient       | A full-screen room for passive observation                  | Enter/exit and Escape work; controls remain reachable; connection/attention state stays truthful; no new execution side effects                                  |
-| Kanban                 | Board over the existing durable tasks                       | Keyboard/touch alternatives; revision conflicts handled; a move changes status only; assignment/launch and cancellation remain explicit separate actions         |
 | Project decoration     | Independent persistent layouts and decor                    | Stable project IDs; shared-layout migration fallback; edits and seats isolated across projects; restoring one room cannot overwrite another                      |
 | Isolated parallel work | One Git worktree/branch per explicitly launched task        | Verify repository/cwd; retain dirty work; human reviews diff and chooses merge; conflicts remain visible; no automatic commit/push/merge or destructive cleanup  |
 | Rest room              | A visual place for agents explicitly reporting a rate limit | Structured provider signal and provenance; reset time only when known; unknown deadlines have no fabricated countdown; retry/resume stays human initiated        |

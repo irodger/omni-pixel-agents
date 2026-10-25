@@ -1630,7 +1630,7 @@ components:
         optionId: { type: string }
     OpaTaskAction:
       type: string
-      enum: [create, update, permission]
+      enum: [create, update, permission, move]
     OpaTaskResult:
       type: object
       required: [type, requestId]

@@ -8,7 +8,8 @@ import { createInterface } from 'node:readline';
 import { nativeAdapters } from '../../../core/src/opa/adapters/native.js';
 import type { PermissionRequest } from '../../../core/src/opa/adapters/types.js';
 import type { OpaEvent } from '../../../core/src/opa/events.js';
-import type { OpaTask } from '../../../core/src/opa/work.js';
+import type { OpaTask, TaskStatus } from '../../../core/src/opa/work.js';
+import { taskStatuses } from '../../../core/src/opa/work.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { AcpClient } from './adapters/acpClient.js';
@@ -40,6 +41,25 @@ export function executeTaskCommand(store: AgentStateStore, raw: Record<string, u
   const before = opaWorkSnapshot(store).tasks.find(
     (t) => t.id === (raw.taskId ?? raw.requestId) && t.projectPath === raw.projectPath,
   );
+  if (raw.action === 'move') {
+    if (!before || typeof raw.taskId !== 'string') throw new WorkError('TASK_NOT_FOUND');
+    if (
+      ['assignee', 'launch', 'title', 'runId', 'permissionId', 'optionId'].some(
+        (field) => raw[field] !== undefined,
+      ) ||
+      !taskStatuses.includes(raw.status as TaskStatus)
+    )
+      throw new WorkError('TASK_INVALID');
+    if (runs.get(store)?.has(key(before))) throw new WorkError('TASK_MOVE_RUNNING');
+    return changeTask(store, {
+      action: 'update',
+      requestId: raw.requestId,
+      projectPath: before.projectPath,
+      taskId: before.id,
+      expectedRevision: raw.expectedRevision,
+      status: raw.status,
+    });
+  }
   if (raw.action === 'permission') {
     const active = before && runs.get(store)?.get(key(before));
     if (

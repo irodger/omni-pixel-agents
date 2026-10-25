@@ -280,4 +280,26 @@ export const ru: Record<string, string> = {
   'Select an office above or enter an existing project folder.':
     'Выберите офис выше или укажите существующую папку проекта.',
   PERMISSION_STALE: 'Запрос разрешения уже недействителен. Обновите задачу.',
+  'Office / Ambient': 'Офис / Ambient',
+  'Ambient project': 'Проект в Ambient',
+  'Review tasks': 'К задачам',
+  'Full screen': 'На весь экран',
+  'Exit full screen': 'Выйти из полного экрана',
+  'Exit Ambient': 'Выйти из Ambient',
+  Connected: 'Подключено',
+  'Connection lost — activity updates are paused.':
+    'Нет соединения — обновления активности приостановлены.',
+  'Browser full screen is unavailable. Ambient still fills this window.':
+    'Полный экран браузера недоступен. Ambient занимает текущее окно.',
+  'No projects available.': 'Нет доступных проектов.',
+  'Task view': 'Вид задач',
+  List: 'Список',
+  Board: 'Доска',
+  'Task board': 'Доска задач',
+  'Move cards or use their status selector. Moving never starts or stops an agent.':
+    'Перемещайте карточки или выбирайте статус в них. Перемещение не запускает и не останавливает агента.',
+  'No tasks in this column.': 'В этой колонке нет задач.',
+  'Stop agent': 'Остановить агента',
+  TASK_MOVE_RUNNING: 'Задача выполняется. Для отмены используйте «Остановить агента».',
+  'Hide task form': 'Скрыть форму задачи',
 };

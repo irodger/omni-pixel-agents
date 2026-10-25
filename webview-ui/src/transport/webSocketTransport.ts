@@ -21,6 +21,8 @@ export class WebSocketTransport implements MessageTransport {
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
+  private openedBefore = false;
+  private handshakeRequested = false;
   private pendingMessages: ClientMessage[] = [];
   private _state: TransportState = TRANSPORT_STATE_CONNECTING;
   private readonly _ready: Promise<void>;
@@ -62,6 +64,14 @@ export class WebSocketTransport implements MessageTransport {
       console.log('[Transport] WebSocket connected');
       this.setState(TRANSPORT_STATE_CONNECTED);
       this.resolveReady();
+      // A new socket/server needs a fresh snapshot, not a replay of prior commands.
+      if (
+        this.openedBefore &&
+        this.handshakeRequested &&
+        !this.pendingMessages.some((message) => message.type === 'webviewReady')
+      )
+        this.ws!.send(JSON.stringify({ type: 'webviewReady' }));
+      this.openedBefore = true;
       // Flush any messages queued while connecting
       for (const msg of this.pendingMessages) {
         this.ws!.send(JSON.stringify(msg));
@@ -91,6 +101,7 @@ export class WebSocketTransport implements MessageTransport {
   }
 
   send(message: ClientMessage): void {
+    if (message.type === 'webviewReady') this.handshakeRequested = true;
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {

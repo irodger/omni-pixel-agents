@@ -45,7 +45,7 @@ export interface OpaWorkData {
 export type OpaTaskCommand = {
   requestId: string;
   projectPath: string;
-  action: 'create' | 'update' | 'permission';
+  action: 'create' | 'update' | 'permission' | 'move';
   taskId?: string;
   title?: string;
   status?: TaskStatus;

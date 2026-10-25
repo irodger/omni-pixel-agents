@@ -12,6 +12,8 @@ See which project is moving, which agent needs you, and what a task used — wit
 
 - Give each project its own office, with Codex and OpenCode activity in the same view.
 - Spot permission requests, failures and unread results; answer source-agent approvals in their own client.
+- Watch a selected project in Office/Ambient, optionally full screen; Escape returns you to Campus.
+- Organize tasks as a kanban board or list. Drag or select a status without starting or stopping an agent.
 - Keep a shared task list, choose an available executor, and start it by saving a new assignment. Results, cancellation and explicit retries stay with the task.
 - Inspect tokens and source-reported or estimated costs by project and period. Export CSV; missing prices stay unknown.
 - Switch the interface between English and Russian. This README also has German and Spanish editions.
@@ -47,6 +49,10 @@ ACP permission requests are answered explicitly in the task card; native source 
 
 Real OPA UI captured locally with labelled fixture tasks/events and synthetic usage. They demonstrate the interface, not paid live sessions or invoices. Screenshots may use an earlier UI revision.
 
+![OPA — Office / Ambient](docs/images/ambient.png)
+
+![OPA — Kanban](docs/images/kanban.png)
+
 ![OPA — task execution fixture](docs/images/task-run.png)
 
 ![OPA — synthetic usage and costs](docs/images/usage.png)
@@ -57,7 +63,7 @@ OPA is a local, source-built fork. No npm/marketplace release or hosted service 
 
 ## What is still on the roadmap
 
-Full-screen Office/Ambient mode; kanban without execution on drag; separate editable project layouts; isolated Git worktrees with reviewed merges; a reliable rate-limit rest room; verified adapters for Copilot, Kilo, Gemini, Qwen and Pi. These are plans, not current integrations.
+Separate editable project layouts; isolated Git worktrees with reviewed merges; a reliable rate-limit rest room; verified adapters for Copilot, Kilo, Gemini, Qwen and Pi. These are plans, not current integrations.
 
 ## Guides & development
 

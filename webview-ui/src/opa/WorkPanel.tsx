@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { OpaTask, OpaTaskCommand, TaskStatus } from '../../../core/src/opa/work.js';
 import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
+import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
@@ -30,16 +31,26 @@ export function WorkPanel({
   const [newProject, setNewProject] = useState('');
   const [assignee, setAssignee] = useState('');
   const [editing, setEditing] = useState<OpaTask | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [taskLayout, setTaskLayout] = useState<'list' | 'board'>(() => {
+    try {
+      return localStorage.getItem('opa.tasks.view') === 'board' ? 'board' : 'list';
+    } catch {
+      return 'list';
+    }
+  });
+  const statusControls = useRef(new Map<string, HTMLSelectElement>());
+  const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState<TaskStatus | 'all'>('all');
   const [period, setPeriod] = useState<UsagePeriod>('all');
   const disabled = readOnly || campus.connection !== 'connected' || pending;
   const tasks = campus.tasks.filter(
     (task) =>
       (!projectId || task.projectPath === projectId) &&
-      (status === 'all' || task.status === status),
+      (taskLayout === 'board' || status === 'all' || task.status === status),
   );
   const projectName = (id: string) => campus.projects.find((p) => p.id === id)?.name ?? id;
   const send = async (command: Omit<OpaTaskCommand, 'requestId'>) => {
@@ -64,116 +75,296 @@ export function WorkPanel({
     setError('');
     setSuccess(false);
   };
+  const moveTask = async (task: OpaTask, status: TaskStatus) => {
+    if (disabled) return;
+    try {
+      const command = taskMoveCommand(task, status);
+      if (command && (await send(command)))
+        requestAnimationFrame(() =>
+          statusControls.current.get(JSON.stringify([task.projectPath, task.id]))?.focus(),
+        );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'TASK_INVALID');
+    }
+  };
+  const renderTask = (task: OpaTask) => (
+    <article
+      key={`${task.projectPath}:${task.id}`}
+      className="opa-task"
+      draggable={taskLayout === 'board' && !disabled && task.execution?.state !== 'running'}
+      onDragStart={(event) => {
+        if (disabled || task.execution?.state === 'running') {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.setData(TASK_DRAG_TYPE, taskDragData(task));
+        event.dataTransfer.effectAllowed = 'move';
+        setDragging(true);
+      }}
+      onDragEnd={() => setDragging(false)}
+    >
+      <div>
+        <h3>{task.title}</h3>
+        <p className="opa-muted">
+          {projectName(task.projectPath)} ·{' '}
+          {campus.executors.find((e) => e.id === task.assignee)?.name ||
+            task.assignee ||
+            t('Unassigned')}
+        </p>
+      </div>
+      {task.execution && (
+        <div className="opa-muted">
+          <p>
+            {t('Execution')}: {t(task.execution.state)}
+          </p>
+          {task.execution.state === 'running' &&
+            task.execution.permissions?.map((permission) => (
+              <div key={permission.id} className="opa-notice">
+                <p>{permission.title}</p>
+                {permission.options.map((option) => (
+                  <button
+                    type="button"
+                    className="opa-button"
+                    key={option.optionId}
+                    disabled={disabled}
+                    onClick={() =>
+                      void send({
+                        action: 'permission',
+                        projectPath: task.projectPath,
+                        taskId: task.id,
+                        runId: task.execution!.runId,
+                        permissionId: permission.id,
+                        optionId: option.optionId,
+                      })
+                    }
+                  >
+                    {option.name} ({option.kind})
+                  </button>
+                ))}
+              </div>
+            ))}
+          {task.execution.error && <p role="alert">{task.execution.error}</p>}
+          {task.execution.output && (
+            <details>
+              <summary>{t('Result')}</summary>
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{task.execution.output}</pre>
+            </details>
+          )}
+          {['failed', 'interrupted', 'cancelled'].includes(task.execution.state) && (
+            <button
+              className="opa-button"
+              disabled={disabled || !campus.executors.some((e) => e.id === task.assignee)}
+              onClick={() =>
+                void send({
+                  action: 'update',
+                  projectPath: task.projectPath,
+                  taskId: task.id,
+                  expectedRevision: task.revision,
+                  launch: true,
+                  status: 'open',
+                })
+              }
+            >
+              {t('Retry task')}
+            </button>
+          )}
+        </div>
+      )}
+      <select
+        ref={(element) => {
+          const key = JSON.stringify([task.projectPath, task.id]);
+          if (element) statusControls.current.set(key, element);
+          else statusControls.current.delete(key);
+        }}
+        aria-label={`${t('Task status')}: ${task.title}`}
+        value={task.status}
+        disabled={disabled || task.execution?.state === 'running'}
+        onChange={(e) => void moveTask(task, e.target.value as TaskStatus)}
+      >
+        {taskStatuses.map((s) => (
+          <option key={s} value={s}>
+            {t(statusLabels[s])}
+          </option>
+        ))}
+      </select>
+      {task.execution?.state === 'running' && (
+        <button
+          className="opa-button"
+          disabled={disabled}
+          onClick={() =>
+            void send({
+              action: 'update',
+              projectPath: task.projectPath,
+              taskId: task.id,
+              expectedRevision: task.revision,
+              status: 'cancelled',
+            })
+          }
+        >
+          {t('Stop agent')}
+        </button>
+      )}
+      <button
+        className="opa-button"
+        disabled={disabled || task.execution?.state === 'running'}
+        onClick={() => editTask(task)}
+      >
+        {t('Edit task')}
+      </button>
+    </article>
+  );
   if (view === 'tasks')
     return (
       <section className="opa-work" aria-label={t('Tasks')}>
-        <h2>{t('Tasks')}</h2>
+        <div className="opa-section-heading">
+          <h2>{t('Tasks')}</h2>
+          <div className="opa-view-tabs" aria-label={t('Task view')}>
+            {(['list', 'board'] as const).map((mode) => (
+              <button
+                type="button"
+                key={mode}
+                className="opa-button"
+                aria-pressed={taskLayout === mode}
+                onClick={() => {
+                  setTaskLayout(mode);
+                  try {
+                    localStorage.setItem('opa.tasks.view', mode);
+                  } catch {
+                    /* In-memory preference remains available. */
+                  }
+                }}
+              >
+                {t(mode === 'list' ? 'List' : 'Board')}
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="opa-muted">{t('Tasks are shared by project and survive server restarts.')}</p>
         {readOnly && (
           <p className="opa-notice">
             {t('Read-only. Open the management link printed by the server to edit tasks.')}
           </p>
         )}
-        <form
-          className="opa-task-form"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            const projectPath = editing?.projectPath ?? projectId ?? newProject.trim();
-            if (!projectPath || disabled) return;
-            if (
-              await send({
-                action: editing ? 'update' : 'create',
-                projectPath,
-                title,
-                assignee,
-                taskId: editing?.id,
-                expectedRevision: editing?.revision,
-              })
-            ) {
-              setTitle('');
-              setAssignee('');
-              setEditing(null);
-            }
-          }}
-        >
-          {!projectId && !editing && (
-            <label>
-              {t('Project folder')}
-              <input
-                aria-label={t('Project folder')}
-                value={newProject}
-                disabled={disabled}
-                placeholder="/path/to/project"
-                onChange={(e) => setNewProject(e.target.value)}
-                required
-              />
-            </label>
-          )}
-          <label>
-            {editing ? t('Edit task') : t('New task')}
-            <input
-              aria-label={t('Task title')}
-              value={title}
-              maxLength={2000}
-              required
-              disabled={disabled}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-          <label>
-            {t('Assignee')}
-            <select
-              aria-label={t('Assignee')}
-              value={assignee}
-              disabled={disabled}
-              onChange={(e) => setAssignee(e.target.value)}
-            >
-              <option value="">{t('Unassigned')}</option>
-              {campus.executors.map((executor) => (
-                <option key={executor.id} value={executor.id}>
-                  {executor.name}
-                </option>
-              ))}
-              {assignee && !campus.executors.some((e) => e.id === assignee) && (
-                <option value={assignee} disabled>
-                  {assignee} — {t('Unavailable')}
-                </option>
-              )}
-            </select>
-          </label>
+        {taskLayout === 'board' && !editing && (
           <button
+            type="button"
             className="opa-button"
-            disabled={disabled || !title.trim() || (!projectId && !editing && !newProject.trim())}
+            aria-expanded={showComposer}
+            disabled={disabled}
+            onClick={() => setShowComposer(!showComposer)}
           >
-            {editing ? t('Save changes') : t('Add task')}
+            {t(showComposer ? 'Hide task form' : 'New task')}
           </button>
-          {editing && (
-            <button
-              type="button"
-              className="opa-button"
-              disabled={pending}
-              onClick={() => {
-                setEditing(null);
-                setTitle('');
-                setAssignee('');
+        )}
+        {(taskLayout === 'list' || showComposer || editing) && (
+          <>
+            <form
+              className="opa-task-form"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                const projectPath = editing?.projectPath ?? projectId ?? newProject.trim();
+                if (!projectPath || disabled) return;
+                if (
+                  await send({
+                    action: editing ? 'update' : 'create',
+                    projectPath,
+                    title,
+                    assignee,
+                    taskId: editing?.id,
+                    expectedRevision: editing?.revision,
+                  })
+                ) {
+                  setTitle('');
+                  setAssignee('');
+                  setEditing(null);
+                  setShowComposer(false);
+                }
               }}
             >
-              {t('Cancel')}
-            </button>
-          )}
-        </form>
-        {!projectId && !editing && (
-          <p className="opa-notice">
-            {t('Select an office above or enter an existing project folder.')}
-          </p>
-        )}
-        <p className="opa-muted">
-          {t('Choosing an executor starts the task in its project. Agent usage may incur costs.')}
-        </p>
-        {!campus.executors.length && (
-          <p className="opa-notice">
-            {t('No installed executors found. Install Codex or OpenCode and restart OPA.')}
-          </p>
+              {!projectId && !editing && (
+                <label>
+                  {t('Project folder')}
+                  <input
+                    aria-label={t('Project folder')}
+                    value={newProject}
+                    disabled={disabled}
+                    placeholder="/path/to/project"
+                    onChange={(e) => setNewProject(e.target.value)}
+                    required
+                  />
+                </label>
+              )}
+              <label>
+                {editing ? t('Edit task') : t('New task')}
+                <input
+                  aria-label={t('Task title')}
+                  value={title}
+                  maxLength={2000}
+                  required
+                  disabled={disabled}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </label>
+              <label>
+                {t('Assignee')}
+                <select
+                  aria-label={t('Assignee')}
+                  value={assignee}
+                  disabled={disabled}
+                  onChange={(e) => setAssignee(e.target.value)}
+                >
+                  <option value="">{t('Unassigned')}</option>
+                  {campus.executors.map((executor) => (
+                    <option key={executor.id} value={executor.id}>
+                      {executor.name}
+                    </option>
+                  ))}
+                  {assignee && !campus.executors.some((e) => e.id === assignee) && (
+                    <option value={assignee} disabled>
+                      {assignee} — {t('Unavailable')}
+                    </option>
+                  )}
+                </select>
+              </label>
+              <button
+                className="opa-button"
+                disabled={
+                  disabled || !title.trim() || (!projectId && !editing && !newProject.trim())
+                }
+              >
+                {editing ? t('Save changes') : t('Add task')}
+              </button>
+              {editing && (
+                <button
+                  type="button"
+                  className="opa-button"
+                  disabled={pending}
+                  onClick={() => {
+                    setEditing(null);
+                    setTitle('');
+                    setAssignee('');
+                  }}
+                >
+                  {t('Cancel')}
+                </button>
+              )}
+            </form>
+            {!projectId && !editing && (
+              <p className="opa-notice">
+                {t('Select an office above or enter an existing project folder.')}
+              </p>
+            )}
+            <p className="opa-muted">
+              {t(
+                'Choosing an executor starts the task in its project. Agent usage may incur costs.',
+              )}
+            </p>
+            {!campus.executors.length && (
+              <p className="opa-notice">
+                {t('No installed executors found. Install Codex or OpenCode and restart OPA.')}
+              </p>
+            )}
+          </>
         )}
         {error && (
           <p className="opa-error-detail" role="alert">
@@ -185,120 +376,80 @@ export function WorkPanel({
             {t('Task saved.')}
           </p>
         )}
-        <label className="opa-filter">
-          {t('Show')}{' '}
-          <select
-            aria-label={t('Task status')}
-            value={status}
-            onChange={(e) => setStatus(e.target.value as TaskStatus | 'all')}
-          >
-            <option value="all">{t('All tasks')}</option>
-            {taskStatuses.map((s) => (
-              <option key={s} value={s}>
-                {t(statusLabels[s])}
-              </option>
-            ))}
-          </select>
-        </label>
+        {taskLayout === 'list' && (
+          <label className="opa-filter">
+            {t('Show')}{' '}
+            <select
+              aria-label={t('Task status')}
+              value={status}
+              onChange={(e) => setStatus(e.target.value as TaskStatus | 'all')}
+            >
+              <option value="all">{t('All tasks')}</option>
+              {taskStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {t(statusLabels[s])}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {!tasks.length && <p className="opa-empty">{t('No tasks yet.')}</p>}
-        <div className="opa-task-list">
-          {tasks
-            .sort((a, b) => b.updatedAt - a.updatedAt)
-            .map((task) => (
-              <article key={`${task.projectPath}:${task.id}`} className="opa-task">
-                <div>
-                  <h3>{task.title}</h3>
-                  <p className="opa-muted">
-                    {projectName(task.projectPath)} ·{' '}
-                    {campus.executors.find((e) => e.id === task.assignee)?.name ||
-                      task.assignee ||
-                      t('Unassigned')}
-                  </p>
-                </div>
-                {task.execution && (
-                  <div className="opa-muted">
-                    <p>
-                      {t('Execution')}: {t(task.execution.state)}
-                    </p>
-                    {task.execution.state === 'running' &&
-                      task.execution.permissions?.map((permission) => (
-                        <div key={permission.id} className="opa-notice">
-                          <p>{permission.title}</p>
-                          {permission.options.map((option) => (
-                            <button
-                              type="button"
-                              className="opa-button"
-                              key={option.optionId}
-                              disabled={disabled}
-                              onClick={() =>
-                                void send({
-                                  action: 'permission',
-                                  projectPath: task.projectPath,
-                                  taskId: task.id,
-                                  runId: task.execution!.runId,
-                                  permissionId: permission.id,
-                                  optionId: option.optionId,
-                                })
-                              }
-                            >
-                              {option.name} ({option.kind})
-                            </button>
-                          ))}
-                        </div>
-                      ))}
-                    {task.execution.error && <p role="alert">{task.execution.error}</p>}
-                    {task.execution.output && (
-                      <details>
-                        <summary>{t('Result')}</summary>
-                        <pre style={{ whiteSpace: 'pre-wrap' }}>{task.execution.output}</pre>
-                      </details>
-                    )}
-                    {['failed', 'interrupted', 'cancelled'].includes(task.execution.state) && (
-                      <button
-                        className="opa-button"
-                        disabled={disabled || !campus.executors.some((e) => e.id === task.assignee)}
-                        onClick={() =>
-                          void send({
-                            action: 'update',
-                            projectPath: task.projectPath,
-                            taskId: task.id,
-                            expectedRevision: task.revision,
-                            launch: true,
-                            status: 'open',
-                          })
-                        }
-                      >
-                        {t('Retry task')}
-                      </button>
-                    )}
-                  </div>
-                )}
-                <select
-                  aria-label={`${t('Task status')}: ${task.title}`}
-                  value={task.status}
-                  disabled={disabled}
-                  onChange={(e) =>
-                    void send({
-                      action: 'update',
-                      projectPath: task.projectPath,
-                      taskId: task.id,
-                      expectedRevision: task.revision,
-                      status: e.target.value as TaskStatus,
-                    })
-                  }
+        {taskLayout === 'board' ? (
+          <>
+            <p className="opa-muted">
+              {t('Move cards or use their status selector. Moving never starts or stops an agent.')}
+            </p>
+            <div className="opa-kanban" aria-label={t('Task board')}>
+              {taskStatuses.map((column) => (
+                <section
+                  key={column}
+                  className={`opa-kanban-column ${dragging ? 'opa-drop-ready' : ''}`}
+                  aria-label={t(statusLabels[column])}
+                  onDragOver={(event) => {
+                    if (!disabled && event.dataTransfer.types.includes(TASK_DRAG_TYPE)) {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+                    }
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setDragging(false);
+                    if (disabled) return;
+                    try {
+                      const task = taskFromDrop(
+                        event.dataTransfer.getData(TASK_DRAG_TYPE),
+                        campus.tasks,
+                      );
+                      if (projectId && task.projectPath !== projectId)
+                        throw new Error('TASK_INVALID');
+                      void moveTask(task, column);
+                    } catch (error) {
+                      setError(error instanceof Error ? error.message : 'TASK_INVALID');
+                    }
+                  }}
                 >
-                  {taskStatuses.map((s) => (
-                    <option key={s} value={s}>
-                      {t(statusLabels[s])}
-                    </option>
-                  ))}
-                </select>
-                <button className="opa-button" disabled={disabled} onClick={() => editTask(task)}>
-                  {t('Edit task')}
-                </button>
-              </article>
-            ))}
-        </div>
+                  <h3>
+                    {t(statusLabels[column])}{' '}
+                    <span className="opa-count">
+                      {tasks.filter((task) => task.status === column).length}
+                    </span>
+                  </h3>
+                  {tasks
+                    .filter((task) => task.status === column)
+                    .sort((a, b) => b.updatedAt - a.updatedAt)
+                    .map(renderTask)}
+                  {!tasks.some((task) => task.status === column) && (
+                    <p className="opa-muted">{t('No tasks in this column.')}</p>
+                  )}
+                </section>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="opa-task-list">
+            {tasks.sort((a, b) => b.updatedAt - a.updatedAt).map(renderTask)}
+          </div>
+        )}
       </section>
     );
 

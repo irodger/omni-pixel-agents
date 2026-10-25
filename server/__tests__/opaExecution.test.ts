@@ -15,7 +15,7 @@ import {
   executeTaskCommand,
   stopTaskExecutions,
 } from '../src/opa/execution.js';
-import { opaWorkSnapshot } from '../src/opa/work.js';
+import { changeTask, opaWorkSnapshot } from '../src/opa/work.js';
 
 const roots: string[] = [];
 const stores: AgentStateStore[] = [];
@@ -205,5 +205,61 @@ if(m.id==='ask' && m.result){send({method:'session/update',params:{sessionId:'ac
     expect(done.status).toBe('done');
     expect(done.execution?.output).toContain('ACP fixture result');
     expect(readFileSync(done.execution!.journal, 'utf8')).toContain('permission.requested');
+  });
+  it('moves assigned tasks without launching, and protects the passive command from launch fields and stale edits', () => {
+    const { store, project } = setup(success);
+    const task = changeTask(store, {
+      action: 'create',
+      requestId: 'board',
+      projectPath: project,
+      title: 'Board task',
+      assignee: 'codex',
+    });
+    const move = {
+      action: 'move',
+      requestId: 'move',
+      projectPath: project,
+      taskId: task.id,
+      expectedRevision: task.revision,
+      status: 'in_progress',
+    };
+    for (const extra of [{ launch: true }, { assignee: 'opencode' }, { title: 'replacement' }])
+      expect(() => executeTaskCommand(store, { ...move, ...extra })).toThrow('TASK_INVALID');
+    const moved = executeTaskCommand(store, move);
+    expect(moved.status).toBe('in_progress');
+    expect(moved.assignee).toBe('codex');
+    expect(moved.execution).toBeUndefined();
+    expect(() => executeTaskCommand(store, move)).toThrow('TASK_CONFLICT');
+    const cancelled = executeTaskCommand(store, {
+      ...move,
+      expectedRevision: moved.revision,
+      status: 'cancelled',
+    });
+    expect(cancelled.execution).toBeUndefined();
+    expect(cancelled.status).toBe('cancelled');
+  });
+  it('does not cancel a real process when a running card is moved to cancelled', async () => {
+    const { store, command } = setup('setInterval(()=>{},1000)');
+    const task = executeTaskCommand(store, command);
+    expect(() =>
+      executeTaskCommand(store, {
+        action: 'move',
+        requestId: 'move-running',
+        taskId: task.id,
+        projectPath: task.projectPath,
+        expectedRevision: task.revision,
+        status: 'cancelled',
+      }),
+    ).toThrow('TASK_MOVE_RUNNING');
+    expect(opaWorkSnapshot(store).tasks[0].execution?.state).toBe('running');
+    executeTaskCommand(store, {
+      action: 'update',
+      requestId: 'explicit-stop',
+      taskId: task.id,
+      projectPath: task.projectPath,
+      expectedRevision: task.revision,
+      status: 'cancelled',
+    });
+    expect((await finished(store)).status).toBe('cancelled');
   });
 });

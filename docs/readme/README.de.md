@@ -12,6 +12,8 @@ Sieh, welches Projekt vorankommt, welcher Agent dich braucht und welche Ressourc
 
 - Ein eigenes Büro pro Projekt, mit Codex- und OpenCode-Aktivität in einer Ansicht.
 - Berechtigungsanfragen, Fehler und ungelesene Ergebnisse erkennen. Freigaben des ursprünglichen Agenten erfolgen in dessen Client.
+- Ein Projekt in Office/Ambient beobachten, optional im Vollbild; Escape führt zum Campus zurück.
+- Aufgaben als Liste oder Kanban anzeigen. Verschieben oder Statuswahl startet oder stoppt keinen Agenten.
 - Gemeinsame Aufgabenliste: einen verfügbaren Agenten wählen und die neue Zuweisung zum Start speichern. Ergebnis, Abbruch und bewusster Neustart bleiben an der Aufgabe.
 - Token und gemeldete oder geschätzte Kosten nach Projekt und Zeitraum ansehen. CSV exportieren; fehlende Preise bleiben unbekannt.
 - Die Oberfläche zwischen Englisch und Russisch umschalten. Dieses README gibt es auch auf Deutsch und Spanisch.
@@ -47,6 +49,10 @@ ACP-Berechtigungsanfragen werden ausdrücklich in der Aufgabenkarte beantwortet;
 
 Echte, lokal aufgenommene OPA-Oberfläche mit gekennzeichneten Testaufgaben und synthetischen Verbrauchsdaten. Keine bezahlten Live-Sitzungen oder Rechnungen. Die Bilder können einen früheren UI-Stand zeigen.
 
+![OPA — Office / Ambient](../../docs/images/ambient.png)
+
+![OPA — Kanban](../../docs/images/kanban.png)
+
 ![OPA — task execution fixture](../../docs/images/task-run.png)
 
 ![OPA — synthetic usage and costs](../../docs/images/usage.png)
@@ -57,7 +63,7 @@ OPA ist ein lokaler Fork zum Selbstbauen. Keine npm-/Marketplace-Veröffentlichu
 
 ## Roadmap
 
-Office/Ambient im Vollbild; Kanban ohne Start beim Verschieben; getrennte bearbeitbare Raumlayouts; isolierte Git-Worktrees mit geprüften Merges; ein zuverlässiger Ruhebereich bei Rate Limits; geprüfte Adapter für Copilot, Kilo, Gemini, Qwen und Pi. Das sind Pläne, keine fertigen Integrationen.
+Getrennte bearbeitbare Raumlayouts; isolierte Git-Worktrees mit geprüften Merges; ein zuverlässiger Ruhebereich bei Rate Limits; geprüfte Adapter für Copilot, Kilo, Gemini, Qwen und Pi. Das sind Pläne, keine fertigen Integrationen.
 
 ## Anleitungen und Entwicklung
 

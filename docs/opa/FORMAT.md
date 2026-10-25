@@ -100,3 +100,7 @@ The file adapter persists `opaWork` in the existing host state JSON, preserving 
 ## Adapter controls versus history
 
 The [adapter layer](ADAPTERS.md) adds native/ACP discovery and explicit commands without new journal event types. ACP v1 session/text/tool/permission observations use the existing OPA envelope and a namespaced provider ID. Reverse permission IDs and selectable options live in transient host task execution state, not portable v0.1 permission events. Only an authenticated human command for the current run/request may choose an option. Replaying a permission or task event cannot send a command or grant approval.
+
+## Passive task movement
+
+`POST /api/opa/tasks` and `opaTaskCommand` accept `action: "move"` with requestId, projectPath, taskId, expectedRevision and status. Unlike a new executor assignment, this command never launches or cancels a process. Launch/assignee/title/permission fields are rejected. Running tasks reject moves with `TASK_MOVE_RUNNING`; use explicit cancellation instead. The usual revision conflict protection applies. This is a host command, not a new journal event.

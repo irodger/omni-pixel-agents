@@ -30,6 +30,14 @@ Use the project selector to focus one office, or **Back to office** for the orig
 
 Project paths live in `opaProjects` in the host's existing `~/.pixel-agents/<namespace>-state.json`. Read marks are local browser preferences, capped at 2,000 result IDs. Agent activity remains recoverable from the OPA JSONL journal. Only OPA-connected agents appear in Campus; the original office continues to show upstream Claude sessions.
 
+## Office / Ambient
+
+Choose **Office / Ambient** in the Campus header. Select a project, optionally use browser full screen, and return with Escape or **Exit Ambient**. **Review tasks** returns to that project's tasks. Connection and attention counters remain visible; passive viewing does not read/approve results or launch agents. Browsers that refuse fullscreen retain the window-filling view. Ambient is a temporary viewing mode, not restored automatically on reload.
+
+## Task board
+
+**Tasks → Board** groups the existing backlog into Open, In progress, Done and Cancelled. Drag a card or use its status selector (keyboard/touch). Moving changes only task status. Running tasks must be stopped through **Stop agent**, not moved. A stale revision displays a conflict; reopen the task to edit the latest revision. **List/Board** is remembered in this browser. New assignments still launch only when explicitly saved in the task form; board creation opens through **New task**.
+
 ## Language, tasks and expenses
 
 Switch between English and Russian in the header; this browser remembers the choice. User content, paths and source messages retain their original language.
