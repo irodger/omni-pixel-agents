@@ -54,6 +54,8 @@ export function opaCampusSnapshot(store: AgentStateStore): OpaCampusState {
     project.agents.push({
       id: agent.id,
       provider: agent.streamProvider,
+      sessionId: agent.streamSessionId,
+      sourceAgentId: agent.streamAgentId,
       name: state?.name || `${agent.streamProvider} ${agent.id}`,
       role: state?.role,
       status,

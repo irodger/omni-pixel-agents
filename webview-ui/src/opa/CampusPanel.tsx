@@ -9,9 +9,13 @@ import { LanguageSelect } from '../i18n/LanguageSelect.js';
 import type { OfficeLayout } from '../office/types.js';
 import { AmbientOffice } from './AmbientOffice.js';
 import { ATTENTION_DELAY_MS, attentionRows, needsAttention, waitingLabel } from './attention.js';
+import { resolveRoute, ROOT_ROUTE } from './deepLinks.js';
+import { LinkControls } from './LinkControls.js';
 import { ProjectCanvas } from './ProjectCanvas.js';
 import { ProjectDecor } from './ProjectDecor.js';
+import { ProjectIdeLink } from './ProjectIdeLink.js';
 import type { useCampus } from './useCampus.js';
+import { useCampusRoute } from './useCampusRoute.js';
 import { WorkPanel } from './WorkPanel.js';
 
 const labels = {
@@ -35,18 +39,42 @@ export function CampusPanel({
 }) {
   const { projects, seen, now, acknowledge } = campus;
   const { language } = useLanguage();
-  const [projectId, setProjectId] = useState<string | null>(null);
+  const { route, navigate } = useCampusRoute();
+  const current = route ?? ROOT_ROUTE;
+  const projectId = current.project ?? null;
+  const setProjectId = (project: string | null) =>
+    navigate({ view: current.view, project: project ?? undefined });
   const [ambientId, setAmbientId] = useState<string | null>(null);
   const ambientButton = useRef<HTMLButtonElement>(null);
   const exitAmbient = useCallback(() => setAmbientId(null), []);
   const [agentId, setAgentId] = useState<number | null>(null);
-  const [view, setView] = useState<'overview' | 'tasks' | 'usage'>('overview');
+  const view = current.view;
+  const setView = (view: 'overview' | 'tasks' | 'usage') =>
+    navigate({ view, project: current.project });
   const rows = attentionRows(projects, seen);
   const agents = projects.flatMap((p) => p.agents);
-  const selected = agents.find((a) => a.id === agentId);
+  const selected = current.session
+    ? projects
+        .find((p) => p.id === projectId)
+        ?.agents.find(
+          (a) =>
+            a.provider === current.provider &&
+            a.sessionId === current.session &&
+            a.sourceAgentId === current.agent,
+        )
+    : projects.find((p) => p.id === projectId)?.agents.find((a) => a.id === agentId);
+  const missing = !route || !resolveRoute(current, projects, campus.tasks);
   const visible = projectId ? projects.filter((p) => p.id === projectId) : projects;
   const openAgent = (project: OpaProjectSnapshot, agent: OpaAgentSnapshot) => {
-    setProjectId(project.id);
+    if (agent.sessionId && agent.sourceAgentId)
+      navigate({
+        view: 'overview',
+        project: project.id,
+        provider: agent.provider,
+        session: agent.sessionId,
+        agent: agent.sourceAgentId,
+      });
+    else setProjectId(project.id);
     setAgentId(agent.id);
     acknowledge(agent);
   };
@@ -78,6 +106,20 @@ export function CampusPanel({
           <p className="opa-connection" role="status">
             {campus.connection === 'reconnecting' ? t('Reconnecting') : t('Connecting')}{' '}
             {' ' + t('— activity updates are paused.')}
+          </p>
+        )}
+        {missing && (
+          <p className="opa-notice" role="status">
+            {t(
+              !route
+                ? 'Invalid or unsupported OPA link.'
+                : !campus.projectsLoaded || (current.task && !campus.workLoaded)
+                  ? 'Waiting for connection to resolve this link.'
+                  : 'Linked target is unavailable. It may be missing or not visible in this session.',
+            )}{' '}
+            <button className="opa-button" onClick={() => navigate(ROOT_ROUTE)}>
+              {t('Overview')}
+            </button>
           </p>
         )}
         <div className="opa-stats" aria-label={t('Campus summary')}>
@@ -139,6 +181,7 @@ export function CampusPanel({
                 projectId={projectId}
                 view={view}
                 readOnly={readOnly}
+                selectedTaskId={current.task}
               />
             ) : (
               <>
@@ -158,6 +201,7 @@ export function CampusPanel({
                       <header>
                         <div>
                           <h2>{project.name}</h2>
+                          <LinkControls route={{ view: 'overview', project: project.id }} />
                           <p title={project.path}>{project.path}</p>
                         </div>
                         <span className="opa-count">
@@ -165,6 +209,7 @@ export function CampusPanel({
                           {countNoun(project.agents.length, 'agents', language)}
                         </span>
                       </header>
+                      <ProjectIdeLink path={project.path} />
                       <ProjectCanvas project={project} layout={layout} />
                       <ProjectDecor
                         project={project}
@@ -205,8 +250,7 @@ export function CampusPanel({
                         <button
                           className="opa-button"
                           onClick={() => {
-                            setProjectId(project.id);
-                            setView('tasks');
+                            navigate({ view: 'tasks', project: project.id });
                           }}
                         >
                           {t('Tasks')}:{' '}
@@ -221,8 +265,7 @@ export function CampusPanel({
                         <button
                           className="opa-button"
                           onClick={() => {
-                            setProjectId(project.id);
-                            setView('usage');
+                            navigate({ view: 'usage', project: project.id });
                           }}
                         >
                           {t('Usage & costs')}
@@ -282,6 +325,17 @@ export function CampusPanel({
               {selected && (
                 <section className="opa-agent-details" aria-label={t('Selected agent')}>
                   <h2>{selected.name}</h2>
+                  {selected.sessionId && selected.sourceAgentId && projectId && (
+                    <LinkControls
+                      route={{
+                        view: 'overview',
+                        project: projectId,
+                        provider: selected.provider,
+                        session: selected.sessionId,
+                        agent: selected.sourceAgentId,
+                      }}
+                    />
+                  )}
                   <p>
                     {selected.provider} · {t(labels[selected.status])}
                   </p>
@@ -304,7 +358,13 @@ export function CampusPanel({
                       ))}
                     </ul>
                   )}
-                  <button className="opa-button" onClick={() => setAgentId(null)}>
+                  <button
+                    className="opa-button"
+                    onClick={() => {
+                      setAgentId(null);
+                      navigate({ view: 'overview', project: current.project });
+                    }}
+                  >
                     {t('Close details')}
                   </button>
                 </section>
@@ -324,8 +384,7 @@ export function CampusPanel({
           onProject={setAmbientId}
           onExit={exitAmbient}
           onTasks={() => {
-            setProjectId(ambientId);
-            setView('tasks');
+            navigate({ view: 'tasks', project: ambientId });
             exitAmbient();
           }}
         />

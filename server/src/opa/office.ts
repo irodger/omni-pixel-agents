@@ -35,6 +35,8 @@ export class OpaOffice {
         jsonlFile: '',
         isExternal: true,
         streamProvider: e.provider,
+        streamSessionId: e.sessionId,
+        streamAgentId: e.agentId,
         opaAttention: { status: 'idle', name: e.name, role: e.role },
         hookDelivered: true,
         directoryName: `${e.provider}: ${e.name || e.role || e.cwd.split(/[\\/]/).pop() || 'Agent'}`,

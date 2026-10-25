@@ -23,6 +23,8 @@ function readSeen(): string[] {
 
 export function useCampus() {
   const [executors, setExecutors] = useState<{ id: string; name: string }[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [workLoaded, setWorkLoaded] = useState(false);
   const [tasks, setTasks] = useState<OpaTask[]>([]);
   const [usage, setUsage] = useState<OpaUsage[]>([]);
   const pending = useRef(
@@ -40,8 +42,12 @@ export function useCampus() {
   useEffect(
     () =>
       transport.onMessage((message) => {
-        if (message.type === 'opaCampusState') setProjects(message.projects);
+        if (message.type === 'opaCampusState') {
+          setProjects(message.projects);
+          setProjectsLoaded(true);
+        }
         if (message.type === 'opaWorkState') {
+          setWorkLoaded(true);
           setTasks(message.tasks);
           setExecutors(message.executors ?? []);
           setUsage(message.usage);
@@ -102,6 +108,8 @@ export function useCampus() {
   const saveLayout = (command: Omit<SaveLayout, 'requestId'>) => saveCommand(command);
   return {
     saveLayout,
+    projectsLoaded,
+    workLoaded,
     projects,
     seen,
     now,

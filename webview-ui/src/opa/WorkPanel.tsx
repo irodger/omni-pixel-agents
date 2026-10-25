@@ -4,6 +4,7 @@ import type { OpaTask, OpaTaskCommand, TaskStatus } from '../../../core/src/opa/
 import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
+import { LinkControls } from './LinkControls.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
@@ -20,11 +21,13 @@ export function WorkPanel({
   projectId,
   view,
   readOnly,
+  selectedTaskId,
 }: {
   campus: ReturnType<typeof useCampus>;
   projectId: string | null;
   view: 'tasks' | 'usage';
   readOnly: boolean;
+  selectedTaskId?: string;
 }) {
   const { language } = useLanguage();
   const [title, setTitle] = useState('');
@@ -50,7 +53,9 @@ export function WorkPanel({
   const tasks = campus.tasks.filter(
     (task) =>
       (!projectId || task.projectPath === projectId) &&
-      (taskLayout === 'board' || status === 'all' || task.status === status),
+      (selectedTaskId
+        ? task.id === selectedTaskId
+        : taskLayout === 'board' || status === 'all' || task.status === status),
   );
   const projectName = (id: string) => campus.projects.find((p) => p.id === id)?.name ?? id;
   const send = async (command: Omit<OpaTaskCommand, 'requestId'>) => {
@@ -105,6 +110,7 @@ export function WorkPanel({
     >
       <div>
         <h3>{task.title}</h3>
+        <LinkControls route={{ view: 'tasks', project: task.projectPath, task: task.id }} />
         <p className="opa-muted">
           {projectName(task.projectPath)} ·{' '}
           {campus.executors.find((e) => e.id === task.assignee)?.name ||

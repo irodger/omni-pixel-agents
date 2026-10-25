@@ -40,6 +40,18 @@ function memoryAdapter(settings: Record<string, unknown>): StateAdapter {
 }
 
 describe('OPA campus', () => {
+  it('exposes source session identity independently of runtime agent IDs', () => {
+    const store = new AgentStateStore();
+    const office = new OpaOffice(store);
+    office.accept(event('shared', { type: 'session.started', cwd: '/fixture/a' }));
+    office.accept(event('shared', { type: 'session.started', cwd: '/fixture/a' }, 'opencode'));
+    const agents = opaCampusSnapshot(store).projects[0].agents;
+    expect(agents.map((a) => [a.provider, a.sessionId, a.sourceAgentId])).toEqual([
+      ['codex', 'shared', 'shared'],
+      ['opencode', 'shared', 'shared'],
+    ]);
+    expect(agents[0].id).not.toBe(agents[1].id);
+  });
   it('restores waiting time from event history rather than the replay time', () => {
     const store = new AgentStateStore();
     const office = new OpaOffice(store, () => 180000);

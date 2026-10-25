@@ -1505,6 +1505,8 @@ components:
       properties:
         id: { type: integer }
         provider: { type: string }
+        sessionId: { type: string }
+        sourceAgentId: { type: string }
         name: { type: string }
         role: { type: string }
         status:

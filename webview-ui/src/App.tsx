@@ -131,6 +131,13 @@ function App() {
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
   const campus = useCampus();
   const [campusOpen, setCampusOpen] = useState(true);
+  useEffect(() => {
+    const openLink = () => {
+      if (window.location.hash.startsWith('#opa?')) setCampusOpen(true);
+    };
+    window.addEventListener('hashchange', openLink);
+    return () => window.removeEventListener('hashchange', openLink);
+  }, []);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
