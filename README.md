@@ -6,6 +6,19 @@
 
 See which project is moving, which agent needs you, and what a task used — without changing every agent to the same workflow.
 
+## Supported agents
+
+| Agent                | How OPA connects                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 🤖 **Codex**         | Activity and task execution through `codex exec --json`. Existing Codex Desktop/interactive chats are not discovered automatically. |
+| 🧩 **OpenCode**      | Live events through the OPA plugin; task execution through `opencode run --format json`.                                            |
+| ✳️ **Claude Code**   | Original Pixel Agents office, hooks/transcripts and legacy launch controls. Not an executor in the OPA task-assignment list.        |
+| 🔌 **ACP v1 agents** | An additional stdio adapter, configured explicitly for a compatible agent. Prompt, cancellation and human permission replies.       |
+
+Install and authenticate the chosen client separately. The task executor list shows runnable clients on the OPA host. See [connection instructions](docs/opa/GETTING_STARTED.md) and [adapter details](docs/opa/ADAPTERS.md).
+
+**Roadmap only:** Copilot, Kilo, Gemini, Qwen and Pi do not yet have verified built-in integrations. An explicitly configured ACP implementation is a separate connection, not automatic support for every CLI.
+
 ![OPA — project campus](docs/images/campus.png)
 
 ## What you can do today

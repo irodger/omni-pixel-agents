@@ -6,6 +6,19 @@
 
 Mira qué proyecto avanza, qué agente necesita tu atención y qué recursos consumió una tarea, sin imponer el mismo flujo a todos los agentes.
 
+## Agentes compatibles
+
+| Agente                | Conexión con OPA                                                                                                                                            |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🤖 **Codex**          | Actividad y ejecución de tareas mediante `codex exec --json`. No se detectan automáticamente los chats existentes de Codex Desktop o de la CLI interactiva. |
+| 🧩 **OpenCode**       | Eventos en tiempo real mediante el plugin OPA; ejecución de tareas mediante `opencode run --format json`.                                                   |
+| ✳️ **Claude Code**    | Oficina original de Pixel Agents, hooks/transcripciones y controles de inicio anteriores. Todavía no figura en la asignación de tareas OPA.                 |
+| 🔌 **Agentes ACP v1** | Adaptador stdio adicional para un agente compatible configurado explícitamente. Prompts, cancelación y respuestas humanas a solicitudes de permisos.        |
+
+Instala y autentica el cliente elegido por separado. La lista de ejecutores muestra clientes que pueden iniciarse en la máquina de OPA. Consulta la [guía de conexión](../../docs/opa/GETTING_STARTED.md) y los [detalles de adaptadores](../../docs/opa/ADAPTERS.md).
+
+**Solo en la hoja de ruta:** Copilot, Kilo, Gemini, Qwen y Pi aún no tienen integraciones incorporadas verificadas. Una implementación ACP configurada explícitamente es una conexión aparte, no compatibilidad automática con cualquier CLI.
+
 ![OPA — project campus](../../docs/images/campus.png)
 
 ## Qué funciona hoy

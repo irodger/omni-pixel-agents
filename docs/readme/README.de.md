@@ -6,6 +6,19 @@
 
 Sieh, welches Projekt vorankommt, welcher Agent dich braucht und welche Ressourcen eine Aufgabe verbraucht — ohne allen Agenten denselben Arbeitsablauf aufzuzwingen.
 
+## Unterstützte Agenten
+
+| Agent                 | Verbindung mit OPA                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🤖 **Codex**          | Aktivität und Aufgabenausführung über `codex exec --json`. Bestehende Codex-Desktop- oder interaktive CLI-Chats werden nicht automatisch erkannt. |
+| 🧩 **OpenCode**       | Live-Ereignisse über das OPA-Plugin; Aufgabenausführung über `opencode run --format json`.                                                        |
+| ✳️ **Claude Code**    | Ursprüngliches Pixel-Agents-Büro, Hooks/Transkripte und bisherige Startfunktionen. Noch kein Eintrag in der OPA-Aufgabenzuweisung.                |
+| 🔌 **ACP-v1-Agenten** | Zusätzlicher stdio-Adapter für einen ausdrücklich konfigurierten kompatiblen Agenten. Prompts, Abbruch und menschliche Freigaben.                 |
+
+Den gewählten Client separat installieren und anmelden. Die Aufgabenliste zeigt startfähige Clients auf dem OPA-Rechner. Siehe [Verbindungsanleitung](../../docs/opa/GETTING_STARTED.md) und [Adapterdetails](../../docs/opa/ADAPTERS.md).
+
+**Nur Roadmap:** Copilot, Kilo, Gemini, Qwen und Pi haben noch keine geprüften integrierten Adapter. Eine ausdrücklich konfigurierte ACP-Implementierung ist eine separate Verbindung, keine automatische Unterstützung beliebiger CLIs.
+
 ![OPA — project campus](../../docs/images/campus.png)
 
 ## Was heute funktioniert
