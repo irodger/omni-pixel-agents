@@ -1,4 +1,12 @@
 export const ru: Record<string, string> = {
+  'Edit project office': 'Редактировать офис проекта',
+  'Save project office': 'Сохранить офис проекта',
+  'Discard unsaved project changes?': 'Отменить несохранённые изменения проекта?',
+  'Close and reopen the editor to load the latest layout.':
+    'Закройте и откройте редактор, чтобы загрузить актуальную планировку.',
+  'Edit this project directly, copy the shared office, or import an exported layout.':
+    'Редактируйте этот проект, скопируйте общий офис или загрузите планировку из файла.',
+
   'Office decor': 'Оформление офиса',
   'Independent project layout': 'Собственная планировка проекта',
   'Uses shared office layout': 'Используется общая планировка',

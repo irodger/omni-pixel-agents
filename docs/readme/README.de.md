@@ -1,6 +1,6 @@
 # Omni Pixel Agents
 
-Projekte können eigene Grundrisse speichern: gemeinsames Büro kopieren, Layout importieren oder nur dieses Projekt zurücksetzen. Möbel werden im bestehenden Haupteditor gestaltet.
+Projekte können eigene Grundrisse speichern: gemeinsames Büro kopieren, Layout importieren oder nur dieses Projekt zurücksetzen. Möbel, Böden und Wände können direkt im Projekt bearbeitet werden, mit getrenntem Entwurf, Rückgängig/Wiederholen und explizitem Speichern.
 
 [English](../../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [Español](README.es.md)
 

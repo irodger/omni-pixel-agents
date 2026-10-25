@@ -1,6 +1,6 @@
 # Omni Pixel Agents
 
-Cada proyecto puede guardar su distribución: copiar la oficina compartida, importar un archivo o restablecer solo ese proyecto. Los muebles se diseñan en el editor principal existente.
+Cada proyecto puede guardar su distribución: copiar la oficina compartida, importar un archivo o restablecer solo ese proyecto. Los muebles, suelos y paredes se editan directamente en el proyecto, con borrador independiente, deshacer/rehacer y guardado explícito.
 
 [English](../../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [Español](README.es.md)
 

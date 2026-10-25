@@ -110,6 +110,7 @@ function defaultZoom(): number {
 export function useEditorActions(
   getOfficeState: () => OfficeState,
   editorState: EditorState,
+  persistSharedLayout = true,
 ): EditorActions {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editorTick, setEditorTick] = useState(0);
@@ -141,12 +142,19 @@ export function useEditorActions(
   }, [editorState]);
 
   // Debounced layout save
-  const saveLayout = useCallback((layout: OfficeLayout) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      transport.send({ type: 'saveLayout', layout: layout as unknown as Record<string, unknown> });
-    }, LAYOUT_SAVE_DEBOUNCE_MS);
-  }, []);
+  const saveLayout = useCallback(
+    (layout: OfficeLayout) => {
+      if (!persistSharedLayout) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        transport.send({
+          type: 'saveLayout',
+          layout: layout as unknown as Record<string, unknown>,
+        });
+      }, LAYOUT_SAVE_DEBOUNCE_MS);
+    },
+    [persistSharedLayout],
+  );
 
   const bumpTick = useCallback(() => setEditorTick((n) => n + 1), []);
 
@@ -501,10 +509,11 @@ export function useEditorActions(
     const os = getOfficeState();
     const layout = os.getLayout();
     lastSavedLayoutRef.current = structuredClone(layout);
-    transport.send({ type: 'saveLayout', layout: layout as unknown as Record<string, unknown> });
+    if (persistSharedLayout)
+      transport.send({ type: 'saveLayout', layout: layout as unknown as Record<string, unknown> });
     editorState.isDirty = false;
     setIsDirty(false);
-  }, [getOfficeState, editorState]);
+  }, [getOfficeState, editorState, persistSharedLayout]);
 
   // Notify React that imperative editor selection changed (e.g., from OfficeCanvas mouseUp)
   const handleEditorSelectionChange = bumpTick;

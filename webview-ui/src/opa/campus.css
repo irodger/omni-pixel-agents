@@ -632,3 +632,42 @@
 .opa-project-decor input {
   max-width: 100%;
 }
+
+.opa-project-editor {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  color: #e9e8f2;
+  background: #191927;
+  border: 0;
+}
+.opa-project-editor[open] {
+  display: flex;
+  flex-direction: column;
+}
+.opa-project-editor::backdrop {
+  background: #000b;
+}
+.opa-project-editor > header {
+  padding: 12px 18px;
+  border-bottom: 1px solid #ffffff22;
+}
+.opa-project-editor h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.opa-project-editor header p {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.opa-project-editor-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { OpaProjectSnapshot } from '../../../core/src/messages.js';
 import { t } from '../i18n/index.js';
 import type { OfficeLayout } from '../office/types.js';
+import { ProjectEditor } from './ProjectEditor.js';
 import type { useCampus } from './useCampus.js';
 
 /** Project overrides are explicit saves; the shared office remains the design workshop. */
@@ -17,6 +18,7 @@ export function ProjectDecor({
   campus: ReturnType<typeof useCampus>;
   readOnly: boolean;
 }) {
+  const [editing, setEditing] = useState(false);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -43,16 +45,26 @@ export function ProjectDecor({
       <button className="opa-button" aria-expanded={open} onClick={() => setOpen(!open)}>
         {t('Office decor')}
       </button>
+      {editing && (
+        <ProjectEditor
+          project={project}
+          shared={shared}
+          campus={campus}
+          readOnly={readOnly}
+          onClose={() => setEditing(false)}
+        />
+      )}
       {open && (
         <div>
           <p className="opa-muted">
             {t(project.layout ? 'Independent project layout' : 'Uses shared office layout')}
           </p>
           <p className="opa-muted">
-            {t(
-              'Design an office in the main editor, then copy it here or import its exported layout.',
-            )}
+            {t('Edit this project directly, copy the shared office, or import an exported layout.')}
           </p>
+          <button className="opa-button" disabled={disabled} onClick={() => setEditing(true)}>
+            {t('Edit project office')}
+          </button>
           <button
             className="opa-button"
             disabled={disabled}

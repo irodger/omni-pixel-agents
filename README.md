@@ -1,6 +1,6 @@
 # Omni Pixel Agents
 
-Project offices can keep independent persistent layouts: copy the shared office, import a layout, or reset only that project. Furniture is designed in the existing main-office editor.
+Project offices can keep independent persistent layouts: copy the shared office, import a layout, or reset only that project. Edit furniture, floors and walls directly through **Office decor → Edit project office**, with isolated drafts, undo/redo and explicit saving.
 
 [English](README.md) · [Русский](docs/readme/README.ru.md) · [Deutsch](docs/readme/README.de.md) · [Español](docs/readme/README.es.md)
 

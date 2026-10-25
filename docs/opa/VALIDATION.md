@@ -73,3 +73,10 @@ Preview: `http://127.0.0.1:3101/`, with demonstration events only. No real user 
 - Added real-file coverage: same basename/different project paths, isolated reset, restart restoration, revision conflict after reset, malformed layout rejection, persistence through agents/seats writes, and no writes to the shared layout file.
 - Shared main-office editor remains the design workshop; direct in-project canvas editing is explicitly a future increment.
 - Full build and 7 package-contract tests pass. Browser smoke check on isolated demo data: pin shared layout, receive success state, reload and confirm restored project override. Screenshot: `docs/images/project-layout.png`.
+
+## 2026-10-26: direct project editor
+
+- Full build passes; 213 webview tests across 25 files pass, including three draft-isolation checks: independent nested data, captured base revision despite incoming changes, and shared/override initialization after reset.
+- Browser smoke check on isolated demo data: open the project editor, add a cactus, undo, redo, save and return to campus with focus restored to the launch button. Disk inspection confirms no writes before explicit save, exactly one added item and one revision increment afterwards, no changes to other project overrides, and no creation of the shared `layout.json`.
+- Editor reuses the existing canvas and furniture/floor/wall/carpet/pet tools with shared-layout persistence disabled. Project directory/area mappings and live agents are not exposed in this draft editor. No model calls were made.
+- Final browser check: the occupied room is fitted above the bottom palette on entry; zoom controls work. Escape first closes the selected tool while keeping the modal open. Screenshot: `docs/images/project-editor.png` (isolated demo project).
