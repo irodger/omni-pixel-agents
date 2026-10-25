@@ -4,6 +4,7 @@ import fastifyWebsocket from '@fastify/websocket';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import Fastify from 'fastify';
 
+import { isOpaEvent } from '../../core/src/opa/events.js';
 import type { AgentRuntime } from './agentRuntime.js';
 import type { AgentStateStore } from './agentStateStore.js';
 import type {
@@ -18,6 +19,10 @@ import {
   WS_CLOSE_FORBIDDEN_ORIGIN,
   WS_CLOSE_UNAUTHORIZED,
 } from './constants.js';
+import { opaCampusSnapshot } from './opa/campus.js';
+import { OpaOffice } from './opa/office.js';
+import { changeTask, opaWorkSnapshot, WorkError } from './opa/work.js';
+import { toPathKey } from './pathKey.js';
 import type { PtySessionManager } from './terminal/ptySessionManager.js';
 import { registerTerminalRoutes } from './terminal/terminalRoutes.js';
 import type { AgentState } from './types.js';
@@ -107,6 +112,48 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   const allowedHostnames = privilegedHostnames(host, options.allowedHosts ?? []);
 
   registerHealthRoute(app);
+  app.get<{ Querystring: { projectPath?: string } }>(
+    '/api/opa/tasks',
+    { preHandler: bearerAuth(options.token) },
+    async (request, reply) => {
+      if (request.query.projectPath !== undefined && typeof request.query.projectPath !== 'string')
+        return reply.code(400).send({ error: 'TASK_INVALID' });
+      const tasks = opaWorkSnapshot(options.store).tasks;
+      return {
+        tasks: request.query.projectPath
+          ? tasks.filter((t) => t.projectPath === toPathKey(request.query.projectPath!))
+          : tasks,
+      };
+    },
+  );
+  app.post<{ Body: Record<string, unknown> }>(
+    '/api/opa/tasks',
+    { preHandler: bearerAuth(options.token) },
+    async (request, reply) => {
+      try {
+        const task = changeTask(options.store, request.body ?? {});
+        options.store.broadcast({ ...opaCampusSnapshot(options.store) });
+        return { task };
+      } catch (error) {
+        const code = error instanceof WorkError ? error.message : 'TASK_INVALID';
+        return reply
+          .code(code === 'STORAGE_FAILED' ? 503 : code === 'TASK_INVALID' ? 400 : 409)
+          .send({ error: code });
+      }
+    },
+  );
+  const opaOffice = new OpaOffice(options.store);
+  app.post('/api/opa/events', { preHandler: bearerAuth(options.token) }, async (request, reply) => {
+    if (!isOpaEvent(request.body))
+      return reply.code(400).send({ error: 'Invalid OPA v0.1/v0.2 event' });
+    try {
+      return { accepted: opaOffice.accept(request.body) };
+    } catch (err) {
+      return reply
+        .code(409)
+        .send({ error: err instanceof Error ? err.message : 'Invalid event order' });
+    }
+  });
   registerHookRoute(app, options);
   registerWebSocketRoute(app, options, allowedHostnames);
   registerTerminalRoutes(app, {
@@ -237,6 +284,7 @@ function registerWebSocketRoute(
 
     const onAgentRemoved = (id: number) => {
       safeSend(socket, { type: 'agentClosed', id });
+      safeSend(socket, { ...opaCampusSnapshot(store) });
     };
 
     const onBroadcast = (message: Record<string, unknown>) => {

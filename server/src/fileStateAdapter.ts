@@ -18,6 +18,8 @@ import * as os from 'os';
 import * as path from 'path';
 
 import type { StateAdapter } from '../../core/src/adapter.js';
+import type { OpaWorkData } from '../../core/src/opa/work.js';
+import { isTask, isUsage } from '../../core/src/opa/work.js';
 import type { PersistedAgent } from '../../core/src/schemas.js';
 import type { AdapterSettingKey, AdapterSettings, ConfigNamespace } from './configPersistence.js';
 import { ADAPTER_SETTING_KEYS, readConfig, writeConfig } from './configPersistence.js';
@@ -32,6 +34,8 @@ function settingNameOf(key: string): AdapterSettingKey | null {
 }
 
 interface AdapterState {
+  opaWork?: OpaWorkData;
+  opaProjects?: string[];
   agents: PersistedAgent[];
   seats: Record<string, { palette?: number; hueShift?: number; seatId?: string }>;
 }
@@ -97,6 +101,24 @@ export class FileStateAdapter implements StateAdapter {
 
   // ── Internal state-file I/O ─────────────────────────────────
 
+  loadOpaProjects(): string[] {
+    return this.readState().opaProjects ?? [];
+  }
+  loadOpaWork(): OpaWorkData {
+    return this.readState().opaWork ?? { tasks: [], usage: [] };
+  }
+  saveOpaWork(data: OpaWorkData): void {
+    const state = this.readState();
+    state.opaWork = data;
+    this.writeState(state, true);
+  }
+
+  saveOpaProjects(paths: string[]): void {
+    const state = this.readState();
+    state.opaProjects = paths;
+    this.writeState(state);
+  }
+
   private readState(): AdapterState {
     try {
       if (!fs.existsSync(this.stateFilePath)) {
@@ -105,6 +127,17 @@ export class FileStateAdapter implements StateAdapter {
       const raw = fs.readFileSync(this.stateFilePath, 'utf-8');
       const parsed = JSON.parse(raw) as Partial<AdapterState>;
       return {
+        opaWork: parsed.opaWork
+          ? {
+              tasks: Array.isArray(parsed.opaWork.tasks) ? parsed.opaWork.tasks.filter(isTask) : [],
+              usage: Array.isArray(parsed.opaWork.usage)
+                ? parsed.opaWork.usage.filter(isUsage)
+                : [],
+            }
+          : undefined,
+        opaProjects: Array.isArray(parsed.opaProjects)
+          ? parsed.opaProjects.filter((p): p is string => typeof p === 'string')
+          : undefined,
         agents: Array.isArray(parsed.agents) ? (parsed.agents as PersistedAgent[]) : [],
         seats:
           parsed.seats && typeof parsed.seats === 'object'
@@ -117,7 +150,7 @@ export class FileStateAdapter implements StateAdapter {
     }
   }
 
-  private writeState(state: AdapterState): void {
+  private writeState(state: AdapterState, strict = false): void {
     const dir = path.dirname(this.stateFilePath);
     try {
       if (!fs.existsSync(dir)) {
@@ -128,6 +161,7 @@ export class FileStateAdapter implements StateAdapter {
       fs.writeFileSync(tmpPath, json, 'utf-8');
       fs.renameSync(tmpPath, this.stateFilePath);
     } catch (err) {
+      if (strict) throw err;
       console.error('[Pixel Agents] Failed to write adapter state:', err);
     }
   }

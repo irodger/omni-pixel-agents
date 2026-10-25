@@ -2,6 +2,7 @@ import type { KeyboardEvent } from 'react';
 import { useEffect, useState } from 'react';
 
 import type { Directory } from '../hooks/useExtensionMessages.js';
+import { t } from '../i18n/index.js';
 import { Button } from './ui/Button.js';
 import { Modal } from './ui/Modal.js';
 
@@ -119,18 +120,18 @@ export function DirectoryModal({
         onKeyDown={handleKeyDown}
       >
         <label className="flex flex-col gap-2 text-xs text-text-muted">
-          Name
+          {t('Name')}
           <input
             type="text"
             value={name}
             autoFocus
-            placeholder="Project name"
+            placeholder={t('Project name')}
             onChange={(e) => setName(e.target.value)}
             className="text-sm py-2 px-4 bg-bg border-2 border-border rounded-none text-text"
           />
         </label>
         <label className="flex flex-col gap-2 text-xs text-text-muted">
-          Path
+          {t('Path')}
           <input
             type="text"
             value={path}
@@ -141,7 +142,7 @@ export function DirectoryModal({
         </label>
         {suggestions.length > 0 && (
           <div data-testid="directory-suggestions" className="flex flex-col gap-2">
-            <span className="text-xs text-text-muted">Recent working directories</span>
+            <span className="text-xs text-text-muted">{t('Recent working directories')}</span>
             <div className="flex flex-col max-h-160 overflow-y-auto pixel-scrollbar">
               {suggestions.map((suggestion) => (
                 // shrink-0 is what keeps the list scrollable rather than
@@ -164,7 +165,7 @@ export function DirectoryModal({
           <div data-testid="directory-areas" className="flex flex-col gap-2">
             {/* The same Directory→Area mapping the layout editor writes: agents
                 launched here prefer seats inside the Areas ticked below. */}
-            <span className="text-xs text-text-muted">Areas</span>
+            <span className="text-xs text-text-muted">{t('Areas')}</span>
             <div className="flex flex-wrap gap-4">
               {areas.map((label) => {
                 const selected = selectedAreas.includes(label);
@@ -196,17 +197,17 @@ export function DirectoryModal({
               it keep running, so this needs no confirmation step. */}
           {editing ? (
             <Button variant="ghost" size="sm" className="text-danger!" onClick={onDelete}>
-              Delete
+              {t('Delete')}
             </Button>
           ) : (
             <span />
           )}
           <span className="flex items-center gap-8">
             <Button variant="default" size="sm" onClick={onClose}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button variant="accent" size="sm" onClick={submit}>
-              Save
+              {t('Save')}
             </Button>
           </span>
         </div>

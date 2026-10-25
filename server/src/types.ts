@@ -1,6 +1,17 @@
 import type * as vscode from 'vscode';
 
 export interface AgentState {
+  /** Push-only OPA agents have no Claude transcript and are restored by replay. */
+  streamProvider?: string;
+  opaAttention?: {
+    name?: string;
+    role?: string;
+    status: 'idle' | 'working' | 'done' | 'error';
+    blockedSince?: number;
+    completedAt?: number;
+    attentionId?: string;
+    error?: string;
+  };
   id: number;
   sessionId: string;
   /** Terminal reference — undefined for extension panel sessions */

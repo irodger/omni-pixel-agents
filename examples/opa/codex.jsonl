@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"demo-codex"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"cmd-1","type":"command_execution","command":"pwd","status":"in_progress"}}
+{"type":"item.completed","item":{"id":"cmd-1","type":"command_execution","status":"completed","exit_code":0}}
+{"type":"item.completed","item":{"id":"patch-1","type":"file_change","status":"completed","changes":[{"path":"README.md","kind":"update"}]}}
+{"type":"item.completed","item":{"id":"message-1","type":"agent_message","text":"Updated the documentation."}}
+{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":20}}

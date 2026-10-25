@@ -47,6 +47,8 @@ import {
   watchLayoutFile,
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
+import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
+import { changeTask, opaWorkSnapshot, WorkError } from '../../server/src/opa/work.js';
 import { PathSet } from '../../server/src/pathKey.js';
 import type { ConsentEffects } from '../../server/src/providers/hook/consentExecutor.js';
 import { applyConsentChoice } from '../../server/src/providers/hook/consentExecutor.js';
@@ -460,7 +462,23 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getWebviewContent(webviewView.webview, this.extensionUri);
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'launchAgent') {
+      if (message.type === 'opaTaskCommand') {
+        try {
+          const task = changeTask(this.store, message);
+          this.webview?.postMessage({
+            type: 'opaTaskResult',
+            requestId: message.requestId,
+            taskId: task.id,
+          });
+          this.store.broadcast({ ...opaCampusSnapshot(this.store) });
+        } catch (error) {
+          this.webview?.postMessage({
+            type: 'opaTaskResult',
+            requestId: message.requestId,
+            error: error instanceof WorkError ? error.message : 'TASK_INVALID',
+          });
+        }
+      } else if (message.type === 'launchAgent') {
         const prevAgentIds = new Set(this.store.keys());
         await launchNewTerminal(
           this.store.nextAgentId,
@@ -626,6 +644,8 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         for (const msg of buffered) {
           this.webview?.postMessage(msg);
         }
+        this.webview?.postMessage(opaCampusSnapshot(this.store));
+        this.webview?.postMessage(opaWorkSnapshot(this.store));
         // Provider capabilities: tool taxonomy for webview animation + subagent rendering.
         // Sent once before restoreAgents so characters render with correct animations
         // from the first frame.

@@ -27,6 +27,8 @@ import { useIntroTour } from './hooks/useIntroTour.js';
 import { useIsMobile } from './hooks/useIsMobile.js';
 import { useKeyboardViewport } from './hooks/useKeyboardViewport.js';
 import { useTerminalDrawer } from './hooks/useTerminalDrawer.js';
+import { t, useLanguage } from './i18n/index.js';
+import { LanguageSelect } from './i18n/LanguageSelect.js';
 import { MobileShell } from './mobile/MobileShell.js';
 import { useMobileShell } from './mobile/useMobileShell.js';
 import { OfficeCanvas } from './office/components/OfficeCanvas.js';
@@ -40,6 +42,9 @@ import { migrateLayoutColors } from './office/layout/layoutSerializer.js';
 import { overlayProjection } from './office/projection.js';
 import { getPetCount } from './office/sprites/petSpriteData.js';
 import { EditTool, type OfficeLayout, TILE_SIZE } from './office/types.js';
+import { attentionRows } from './opa/attention.js';
+import { CampusPanel } from './opa/CampusPanel.js';
+import { useCampus } from './opa/useCampus.js';
 import { isBrowserRuntime, isE2E } from './runtime.js';
 import { installTestHooks } from './testHooks.js';
 import { transport } from './transport/index.js';
@@ -61,6 +66,7 @@ function getOfficeState(): OfficeState {
 }
 
 function App() {
+  useLanguage();
   // Browser runtime (dev or static dist): dispatch mock messages after the
   // useExtensionMessages listener has been registered.
   useEffect(() => {
@@ -123,6 +129,8 @@ function App() {
     terminalUnavailableReason,
     terminalAgentIds,
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
+  const campus = useCampus();
+  const [campusOpen, setCampusOpen] = useState(true);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);
@@ -317,7 +325,7 @@ function App() {
 
   const [editorTickForKeyboard, setEditorTickForKeyboard] = useState(0);
   useEditorKeyboard(
-    editor.isEditMode,
+    editor.isEditMode && !campusOpen,
     editorState,
     editor.handleDeleteSelected,
     editor.handleRotateSelected,
@@ -460,7 +468,17 @@ function App() {
     })();
 
   if (!layoutReady) {
-    return <div className="w-full h-full flex items-center justify-center ">Loading...</div>;
+    return <div className="w-full h-full flex items-center justify-center ">{t('Loading...')}</div>;
+  }
+  if (campusOpen) {
+    return (
+      <CampusPanel
+        campus={campus}
+        readOnly={officeReadOnly}
+        layout={officeState.getLayout()}
+        onClose={() => setCampusOpen(false)}
+      />
+    );
   }
 
   // The office region is shared by both shells: desktop mounts it as the
@@ -513,7 +531,7 @@ function App() {
               className="absolute left-1/2 -translate-x-1/2 z-11 bg-accent-bright text-white text-sm py-3 px-8 rounded-none border-2 border-accent shadow-pixel pointer-events-none whitespace-nowrap"
               style={{ top: editor.isDirty ? 64 : 8 }}
             >
-              Rotate (R)
+              {t('Rotate (R)')}
             </div>
           )}
 
@@ -599,7 +617,7 @@ function App() {
           Detection Active" before anything is installed would be a lie. */}
       {hooksEnabled && claudeHooksInstalled && !hooksInfoShown && !hooksTooltipDismissed && (
         <Tooltip
-          title="Instant Detection Active"
+          title={t('Instant Detection Active')}
           position="top-right"
           onDismiss={() => {
             setHooksTooltipDismissed(true);
@@ -607,7 +625,7 @@ function App() {
           }}
         >
           <span className="text-sm text-text leading-none">
-            Your agents now respond in real-time.{' '}
+            {t('Your agents now respond in real-time.')}{' '}
             <span
               className="text-accent cursor-pointer underline"
               onClick={() => {
@@ -616,7 +634,7 @@ function App() {
                 transport.send({ type: 'setHooksInfoShown' });
               }}
             >
-              View more
+              {t('View more')}
             </span>
           </span>
         </Tooltip>
@@ -624,7 +642,7 @@ function App() {
 
       {officeReadOnly && (
         <div className="absolute mobile-safe-top left-1/2 -translate-x-1/2 z-10 text-sm text-text-muted pointer-events-none select-none whitespace-nowrap">
-          View only
+          {t('View only')}
         </div>
       )}
 
@@ -654,7 +672,7 @@ function App() {
             className="border-border! shadow-pixel"
             onClick={() => setIsSettingsOpen((v) => !v)}
           >
-            Settings
+            {t('Settings')}
           </Button>
         </div>
       )}
@@ -703,6 +721,18 @@ function App() {
         isMobile && keyboard.clampHeight !== null ? { height: keyboard.clampHeight } : undefined
       }
     >
+      <div className="opa-legacy-language">
+        <LanguageSelect />
+      </div>
+      {!campusOpen && (
+        <button className="opa-campus-entry" onClick={() => setCampusOpen(true)}>
+          {t('Campus ·') + ' '}
+          {campus.projects.length} {' ' + t('offices')}{' '}
+          <span>
+            · {attentionRows(campus.projects, campus.seen).length} {' ' + t('need you')}
+          </span>
+        </button>
+      )}
       {isMobile ? (
         <MobileShell
           office={officeRegion}
@@ -768,30 +798,34 @@ function App() {
       <Modal
         isOpen={isHooksInfoOpen}
         onClose={() => setIsHooksInfoOpen(false)}
-        title="Instant Detection is ON"
+        title={t('Instant Detection is ON')}
         zIndex={52}
       >
         <div className="text-base text-text px-10" style={{ lineHeight: 1.4 }}>
-          <p className="mb-8">Your Pixel Agents office now reacts in real-time:</p>
+          <p className="mb-8">{t('Your Pixel Agents office now reacts in real-time:')}</p>
           <ul className="mb-8 pl-18 list-disc m-0">
-            <li className="text-sm mb-2">Permission prompts appear instantly</li>
-            <li className="text-sm mb-2">Turn completions detected the moment they happen</li>
-            <li className="text-sm mb-2">Sound notifications play immediately</li>
+            <li className="text-sm mb-2">{t('Permission prompts appear instantly')}</li>
+            <li className="text-sm mb-2">
+              {t('Turn completions detected the moment they happen')}
+            </li>
+            <li className="text-sm mb-2">{t('Sound notifications play immediately')}</li>
           </ul>
           <p className="mb-12 text-text-muted">
-            This works through Claude Code Hooks, small event listeners that notify Pixel Agents
-            whenever something happens in your Claude sessions.
+            {t(
+              'This works through Claude Code Hooks, small event listeners that notify Pixel Agents whenever something happens in your Claude sessions.',
+            )}
           </p>
           <div className="text-center">
             <button
               onClick={() => setIsHooksInfoOpen(false)}
               className="py-4 px-20 text-lg bg-accent text-white border-2 border-accent rounded-none cursor-pointer shadow-pixel"
             >
-              Got it
+              {t('Got it')}
             </button>
           </div>
           <p className="mt-8 text-xs text-text-muted text-center">
-            To disable, go to Settings {'>'} Instant Detection
+            {t('To disable, go to Settings') + ' '}
+            {'>'} {' ' + t('Instant Detection')}
           </p>
         </div>
       </Modal>

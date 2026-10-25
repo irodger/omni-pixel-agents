@@ -21,6 +21,8 @@ import {
 import { collectDirectorySuggestions } from './directorySuggestions.js';
 import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
+import { opaCampusSnapshot } from './opa/campus.js';
+import { changeTask, opaWorkSnapshot, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from './providers/hook/consentGate.js';
@@ -129,11 +131,26 @@ export function handleClientMessage(
   // message type added later is privileged by default instead of open until
   // someone remembers to gate it.
   if (!ctx.privileged && msg.type !== 'webviewReady') {
+    if (msg.type === 'opaTaskCommand')
+      send({ type: 'opaTaskResult', requestId: msg.requestId, error: 'READ_ONLY' });
     refuseReadOnly(msg, send, ctx);
     return;
   }
 
   switch (msg.type) {
+    case 'opaTaskCommand':
+      try {
+        const task = changeTask(store, msg);
+        send({ type: 'opaTaskResult', requestId: msg.requestId, taskId: task.id });
+        store.broadcast({ ...opaCampusSnapshot(store) });
+      } catch (error) {
+        send({
+          type: 'opaTaskResult',
+          requestId: msg.requestId,
+          error: error instanceof WorkError ? error.message : 'TASK_INVALID',
+        });
+      }
+      break;
     case 'webviewReady':
       handleWebviewReady(send, ctx);
       break;
@@ -626,6 +643,8 @@ function handleWebviewReady(send: WsSend, ctx: ClientMessageContext): void {
   // exist once the layout flush creates them. Without this a reconnecting
   // client shows bare characters until each agent takes another turn.
   resendAgentActivity(send, store);
+  send({ ...opaCampusSnapshot(store) });
+  send({ ...opaWorkSnapshot(store) });
 
   // 9. Re-announce live terminals AFTER existingAgents, so a browser that
   // reloaded (or a second tab) rebuilds its drawer tabs. The PTY outlives the

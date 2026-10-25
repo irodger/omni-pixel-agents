@@ -1,6 +1,7 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
 
 import { TERMINAL_DRAWER_RESIZE_HANDLE_PX } from '../constants.js';
+import { t } from '../i18n/index.js';
 import type { TerminalConnectionStatus } from '../terminal/terminalClient.js';
 import type { AgentAppearance, TabStatus } from './AgentCard.js';
 import { AgentCardBar } from './AgentCardBar.js';
@@ -85,7 +86,7 @@ export function TerminalDrawer({
           className="absolute top-0 left-0 bottom-0 z-40 cursor-col-resize hover:bg-accent"
           style={{ width: TERMINAL_DRAWER_RESIZE_HANDLE_PX }}
           onMouseDown={onResizeStart}
-          title="Drag to resize"
+          title={t('Drag to resize')}
         />
 
         {/* Close the panel. Floats over the pane's top-right corner so the
@@ -97,7 +98,7 @@ export function TerminalDrawer({
             size="icon"
             onClick={onClosePanel}
             className="hover:bg-btn-hover"
-            title="Close terminal"
+            title={t('Close terminal')}
           >
             {'>'}
           </Button>

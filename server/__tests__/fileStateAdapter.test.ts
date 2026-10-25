@@ -18,6 +18,11 @@ vi.mock('os', async () => {
 // Must import AFTER mock setup.
 const { FileStateAdapter } = await import('../src/fileStateAdapter.js');
 const { getHooksEnabled, setHooksEnabled } = await import('../src/configPersistence.js');
+const { AgentStateStore } = await import('../src/agentStateStore.js');
+const { OpaOffice } = await import('../src/opa/office.js');
+const { opaCampusSnapshot } = await import('../src/opa/campus.js');
+const { OpaNormalizer } = await import('../../core/src/opa/normalize.js');
+const { changeTask, opaWorkSnapshot } = await import('../src/opa/work.js');
 
 describe('FileStateAdapter', () => {
   beforeEach(() => {
@@ -29,6 +34,57 @@ describe('FileStateAdapter', () => {
   });
 
   // ── Settings (shared config.json, per-namespace section) ────
+
+  it('persists tasks and usage observations alongside seats and project paths', () => {
+    const adapter = new FileStateAdapter({ namespace: 'standalone' });
+    const store = new AgentStateStore();
+    store.setAdapter(adapter);
+    const cwd = path.join(tempHome, 'work');
+    changeTask(store, {
+      action: 'create',
+      requestId: 'task',
+      projectPath: cwd,
+      title: 'Shared task',
+    });
+    const normalizer = new OpaNormalizer('codex', cwd);
+    const office = new OpaOffice(store);
+    for (const e of normalizer.normalize({ type: 'thread.started', thread_id: 's' }))
+      office.accept(e);
+    for (const e of normalizer.normalize({
+      type: 'turn.completed',
+      usage: { input_tokens: 100, output_tokens: 20, cached_input_tokens: 80 },
+    }))
+      office.accept(e);
+    adapter.saveSeats({ '1': { palette: 1 } });
+    store.persist();
+    const next = new AgentStateStore();
+    next.setAdapter(new FileStateAdapter({ namespace: 'standalone' }));
+    expect(opaWorkSnapshot(next).tasks[0].title).toBe('Shared task');
+    expect(opaWorkSnapshot(next).usage[0]).toMatchObject({ inputTokens: 100, outputTokens: 20 });
+    expect(next.getAdapter()?.loadOpaProjects?.()).toContain(cwd);
+  });
+
+  it('restores the OPA project registry from disk after other state writes', () => {
+    const adapter = new FileStateAdapter({ namespace: 'standalone' });
+    const store = new AgentStateStore();
+    store.setAdapter(adapter);
+    const office = new OpaOffice(store);
+    const cwd = path.join(tempHome, 'project');
+    const normalizer = new OpaNormalizer('codex', cwd);
+    for (const event of normalizer.normalize({ type: 'thread.started', thread_id: 's' }))
+      office.accept(event);
+    store.persist();
+    adapter.saveSeats({ '1': { palette: 2 } });
+    const restoredAdapter = new FileStateAdapter({ namespace: 'standalone' });
+    const restored = new AgentStateStore();
+    restored.setAdapter(restoredAdapter);
+    expect(opaCampusSnapshot(restored).projects).toEqual([
+      { id: cwd, path: cwd, name: 'project', agents: [] },
+    ]);
+    expect(restoredAdapter.loadAgents()).toEqual([]);
+    expect(restoredAdapter.loadSeats()).toEqual({ '1': { palette: 2 } });
+    expect(new FileStateAdapter({ namespace: 'vscode' }).loadOpaProjects()).toEqual([]);
+  });
 
   it('returns defaults when config file does not exist', () => {
     const adapter = new FileStateAdapter({ namespace: 'standalone' });

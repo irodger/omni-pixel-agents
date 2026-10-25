@@ -109,6 +109,23 @@ async function main() {
     copyAssets();
     buildHooks();
     await buildCli();
+    fs.copyFileSync('docs/opa/event.schema.json', 'dist/opa-event.schema.json');
+    await esbuild.build({
+      entryPoints: ['server/src/opa/bridge.ts'],
+      bundle: true,
+      platform: 'node',
+      format: 'cjs',
+      target: 'node20',
+      outfile: 'dist/opa-bridge.js',
+    });
+    await esbuild.build({
+      entryPoints: ['integrations/opencode/plugin.ts'],
+      bundle: true,
+      platform: 'node',
+      format: 'esm',
+      target: 'node20',
+      outfile: 'dist/integrations/opa-opencode.mjs',
+    });
     await buildUninstall();
   }
 }

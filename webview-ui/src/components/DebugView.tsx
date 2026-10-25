@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { t } from '../i18n/index.js';
 import type { OfficeState } from '../office/engine/officeState.js';
 import type { ToolActivity } from '../office/types.js';
 import { transport } from '../transport/index.js';
@@ -113,7 +114,8 @@ export function DebugView({
           <span
             className={`rounded-none py-6 px-10 text-xl ${isSelected ? 'text-white font-bold' : ''}`}
           >
-            Agent #{id}
+            {t('Agent #')}
+            {id}
           </span>
           <Button
             variant="ghost"
@@ -123,7 +125,7 @@ export function DebugView({
               transport.send({ type: 'closeAgent', id });
             }}
             className={`opacity-70 ${isSelected ? 'text-white' : ''}`}
-            title="Close agent"
+            title={t('Close agent')}
           >
             ✕
           </Button>
@@ -147,7 +149,7 @@ export function DebugView({
               officeState.characters.get(id)?.waitingAwaitingInput && (
                 <span className="text-base opacity-85 flex items-center gap-5">
                   <span className="w-6 h-6 rounded-full inline-block shrink-0 bg-status-permission" />
-                  Waiting for input
+                  {t('Waiting for input')}
                 </span>
               )}
           </div>
@@ -160,19 +162,23 @@ export function DebugView({
                 {diag.jsonlExists ? 'JSONL connected' : 'JSONL not found'}
               </span>
               {' | '}
-              Lines: {diag.linesProcessed}
+              {t('Lines:') + ' '}
+              {diag.linesProcessed}
               {' | '}
-              Last data: {formatTimeAgo(diag.lastDataAt)}
+              {t('Last data:') + ' '}
+              {formatTimeAgo(diag.lastDataAt)}
             </span>
             <span className="opacity-60 text-2xs break-all">{diag.jsonlFile}</span>
             {!diag.projectDirExists && (
               <span className="text-2xs text-status-error">
-                Project dir does not exist: {diag.projectDir}
+                {t('Project dir does not exist:') + ' '}
+                {diag.projectDir}
               </span>
             )}
             {diag.jsonlExists && diag.fileSize > 0 && diag.linesProcessed === 0 && (
               <span className="text-2xs text-status-permission">
-                File has data ({diag.fileSize} bytes) but 0 lines parsed. Possible format issue.
+                {t('File has data (')}
+                {diag.fileSize} {' ' + t('bytes) but 0 lines parsed. Possible format issue.')}
               </span>
             )}
           </div>
@@ -184,7 +190,7 @@ export function DebugView({
   return (
     <div className="absolute inset-0 overflow-auto bg-bg z-15">
       <div className="px-12 py-6 text-2xl">
-        <h2 className="text-3xl font-bold mb-8">Debug View</h2>
+        <h2 className="text-3xl font-bold mb-8">{t('Debug View')}</h2>
         <div className="flex flex-col gap-6">{agents.map(renderAgentCard)}</div>
       </div>
     </div>

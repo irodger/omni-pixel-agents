@@ -3,7 +3,7 @@ import fs from 'node:fs';
 
 import semver from 'semver';
 
-export const EXPECTED_PACKAGE_NAME = 'pixel-agents';
+export const EXPECTED_PACKAGE_NAME = 'omni-pixel-agents';
 export const EXPECTED_REPOSITORY_URL = 'https://github.com/pixel-agents-hq/pixel-agents';
 
 // fastify + @fastify/{cors,static,websocket} are root runtime `dependencies` even though
@@ -18,6 +18,9 @@ export const REQUIRED_PACKAGE_FILES = [
   'LICENSE',
   'README.md',
   'dist/cli.js',
+  'dist/opa-bridge.js',
+  'dist/integrations/opa-opencode.mjs',
+  'dist/opa-event.schema.json',
   'dist/extension.js',
   'dist/hooks/claude-hook.js',
   'dist/webview/index.html',

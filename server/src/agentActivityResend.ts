@@ -66,6 +66,11 @@ export function resendAgentActivity(
       });
     }
 
+    // Push-only OPA sessions have no transcript/timer to re-emit approvals.
+    if (agent.streamProvider && agent.permissionSent) {
+      send({ type: 'agentToolPermission', id });
+    }
+
     // 4. Waiting status
     if (agent.isWaiting) {
       send({

@@ -8,6 +8,9 @@
  */
 
 export type ServerMessage =
+  | OpaCampusState
+  | OpaWorkState
+  | OpaTaskResult
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -49,6 +52,7 @@ export type ServerMessage =
   | AgentDiagnostics;
 
 export type ClientMessage =
+  | OpaTaskCommand
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -76,6 +80,92 @@ export type ClientMessage =
   | RemoveDirectory
   | RequestDirectorySuggestions
   | RequestDiagnostics;
+
+export interface OpaCampusState {
+  type: 'opaCampusState';
+  projects: OpaProjectSnapshot[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaProjectSnapshot {
+  id: string;
+  name: string;
+  path: string;
+  agents: OpaAgentSnapshot[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaAgentSnapshot {
+  id: number;
+  provider: string;
+  name: string;
+  role?: string;
+  status: OpaActivityStatus;
+  palette?: number;
+  hueShift?: number;
+  blockedSince?: number;
+  completedAt?: number;
+  attentionId?: string;
+  error?: string;
+  tools: string[];
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaActivityStatus = 'idle' | 'working' | 'blocked' | 'done' | 'error';
+
+export interface OpaWorkState {
+  type: 'opaWorkState';
+  tasks: OpaTaskRecord[];
+  usage: OpaUsageRecord[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaTaskRecord {
+  id: string;
+  projectPath: string;
+  title: string;
+  status: OpaTaskStatus;
+  assignee?: string;
+  createdAt: number;
+  updatedAt: number;
+  revision: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaTaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
+
+export interface OpaUsageRecord {
+  usageId: string;
+  projectPath: string;
+  provider: string;
+  sessionId: string;
+  timestamp: string;
+  model?: string;
+  inputTokens: number;
+  outputTokens: number;
+  cachedInputTokens?: number;
+  cacheWriteTokens?: number;
+  reasoningTokens?: number;
+  cost?: OpaCost;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaCost {
+  amount: number;
+  currency: 'USD';
+  kind: OpaCostKind;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaCostKind = 'reported' | 'estimated';
+
+export interface OpaTaskResult {
+  type: 'opaTaskResult';
+  requestId: string;
+  taskId?: string;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -375,6 +465,21 @@ export interface AgentDiagnostics {
   type: 'agentDiagnostics';
   agents: Record<string, any>[];
 }
+
+export interface OpaTaskCommand {
+  type: 'opaTaskCommand';
+  requestId: string;
+  projectPath: string;
+  action: OpaTaskAction;
+  taskId?: string;
+  title?: string;
+  status?: OpaTaskStatus;
+  assignee?: string;
+  expectedRevision?: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaTaskAction = 'create' | 'update';
 
 export interface WebviewReady {
   type: 'webviewReady';

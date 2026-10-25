@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { Directory } from '../hooks/useExtensionMessages.js';
+import { t } from '../i18n/index.js';
 import { isBrowserRuntime } from '../runtime.js';
 import { transport } from '../transport/index.js';
 import { LaunchDrawer } from './LaunchDrawer.js';
@@ -77,7 +78,7 @@ export function BottomToolbar({
           disabled
           title={terminalUnavailableReason ?? 'Terminal unavailable on this server.'}
         >
-          + Agent
+          {t('+ Agent')}
         </Button>
       )}
       {canLaunch && (
@@ -94,7 +95,7 @@ export function BottomToolbar({
             onClick={handleAgentClick}
             className={isDrawerOpen ? 'bg-accent-bright' : 'bg-accent hover:bg-accent-bright'}
           >
-            + Agent
+            {t('+ Agent')}
           </Button>
           <LaunchDrawer
             isOpen={isDrawerOpen}
@@ -114,16 +115,16 @@ export function BottomToolbar({
       <Button
         variant={isEditMode ? 'active' : 'default'}
         onClick={onToggleEditMode}
-        title="Edit office layout"
+        title={t('Edit office layout')}
       >
-        Layout
+        {t('Layout')}
       </Button>
       <Button
         variant={isSettingsOpen ? 'active' : 'default'}
         onClick={onToggleSettings}
-        title="Settings"
+        title={t('Settings')}
       >
-        Settings
+        {t('Settings')}
       </Button>
     </div>
   );

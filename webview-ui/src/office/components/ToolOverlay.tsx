@@ -24,6 +24,7 @@ import {
   TOOL_OVERLAY_VERTICAL_OFFSET,
 } from '../../constants.js';
 import type { SubagentCharacter } from '../../hooks/useExtensionMessages.js';
+import { t } from '../../i18n/index.js';
 import type { OfficeState } from '../engine/officeState.js';
 import { overlayProjection } from '../projection.js';
 import { getCachedSprite } from '../sprites/spriteCache.js';
@@ -325,7 +326,7 @@ export function ToolOverlay({
                       fontStyle: isSub ? 'italic' : undefined,
                     }}
                   >
-                    {activityText}
+                    {t(activityText)}
                   </span>
                   {ch.directoryName && (
                     <span className="text-2xs leading-none overflow-hidden text-ellipsis block">
@@ -341,7 +342,7 @@ export function ToolOverlay({
                       e.stopPropagation();
                       onCloseAgent(id);
                     }}
-                    title="Close agent"
+                    title={t('Close agent')}
                     className="ml-2 shrink-0 leading-none"
                   >
                     ×

@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OPA Event v0.2 (v0.1 compatible)",
+  "type": "object",
+  "required": [
+    "specVersion",
+    "id",
+    "streamId",
+    "timestamp",
+    "provider",
+    "sessionId",
+    "agentId",
+    "sequence",
+    "type"
+  ],
+  "properties": {
+    "specVersion": {
+      "enum": [
+        "0.1",
+        "0.2"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "streamId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "agentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "type": {
+          "const": "session.started"
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parentAgentId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "cwd"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "session.ended"
+        }
+      },
+      "required": []
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "turn.started"
+        }
+      },
+      "required": []
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "turn.completed"
+        }
+      },
+      "required": []
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "permission.requested"
+        }
+      },
+      "required": []
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "permission.resolved"
+        }
+      },
+      "required": []
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "turn.failed"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "message"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "message"
+        },
+        "role": {
+          "enum": [
+            "user",
+            "assistant"
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "text"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "tool.started"
+        },
+        "toolId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "activity": {
+          "enum": [
+            "read",
+            "write",
+            "execute"
+          ]
+        }
+      },
+      "required": [
+        "toolId",
+        "name",
+        "activity"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "tool.completed"
+        },
+        "toolId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "failed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "toolId"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "usage.reported"
+        },
+        "specVersion": {
+          "const": "0.2"
+        },
+        "usage": {
+          "type": "object",
+          "required": [
+            "usageId",
+            "projectPath",
+            "provider",
+            "sessionId",
+            "timestamp",
+            "inputTokens",
+            "outputTokens"
+          ],
+          "properties": {
+            "usageId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "projectPath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provider": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sessionId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "timestamp": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "inputTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "outputTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "cachedInputTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "cacheWriteTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "reasoningTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "model": {
+              "type": "string"
+            },
+            "cost": {
+              "type": "object",
+              "required": [
+                "amount",
+                "currency",
+                "kind"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "const": "USD"
+                },
+                "kind": {
+                  "enum": [
+                    "reported",
+                    "estimated"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "usage"
+      ]
+    },
+    {
+      "properties": {
+        "type": {
+          "const": "task.upserted"
+        },
+        "specVersion": {
+          "const": "0.2"
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "status": {
+          "enum": [
+            "open",
+            "in_progress",
+            "done",
+            "cancelled"
+          ]
+        },
+        "assignee": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "cwd",
+        "taskId",
+        "title",
+        "status"
+      ]
+    }
+  ]
+}

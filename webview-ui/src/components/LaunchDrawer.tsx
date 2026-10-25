@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 
 import { DRAWER_EDIT_LONG_PRESS_MAX_MOVE_PX, DRAWER_EDIT_LONG_PRESS_MS } from '../constants.js';
 import type { Directory } from '../hooks/useExtensionMessages.js';
+import { t } from '../i18n/index.js';
 import { Dropdown, DropdownItem } from './ui/Dropdown.js';
 
 interface LaunchDrawerProps {
@@ -58,7 +59,7 @@ export function LaunchDrawer({
             this wrapper. Pinned: it never scrolls away with the rows. */}
         <div className="shrink-0 border-b-2 border-border">
           <DropdownItem onClick={onAddDirectory} className="text-base text-accent-bright">
-            + Directory
+            {t('+ Directory')}
           </DropdownItem>
         </div>
         <div className="min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pixel-scrollbar">
@@ -166,7 +167,7 @@ function DirectoryRow({ directory, onSelect, onEditDirectory }: DirectoryRowProp
         <button
           onClick={() => onEditDirectory(directory)}
           aria-label={`Edit ${directory.name}`}
-          title="Edit directory"
+          title={t('Edit directory')}
           className="shrink-0 self-stretch flex items-center px-8 bg-transparent border-none rounded-none cursor-pointer text-sm leading-none text-text-muted hover:text-text opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:hidden"
         >
           <span className="material-symbols-sharp text-[12px]" aria-hidden="true">
