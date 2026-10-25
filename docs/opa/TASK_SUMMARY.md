@@ -1,0 +1,9 @@
+# Task summary (planned PR2)
+
+Finished, failed, cancelled and interrupted executions have a read-only summary in task list/board. Task status remains separate from run outcome. The card shows run ID, original executor when captured, known start/end/duration, bounded result/error and recorded run usage. A later assignment does not rewrite the original executor. Older executions without new fields stay unknown; `done` tasks without an execution record do not acquire fictional runs.
+
+Native/ACP execution records now capture source session/agent identity and up to 1,000 distinct usage observations from that attempt's normalized stream. A corrected observation replaces its earlier value; older corrections are ignored. Exceeding that bound drops summary usage to unknown rather than showing partial totals. Session-wide/project-wide usage is never attributed to a run by a time-range guess. Absent price is unknown, known zero is retained, reported and estimated amounts remain separate. These are observations, not invoices. Result text keeps the existing 8,000-character tail and now explicitly labels truncation.
+
+Copy summary and task/source-session links are passive. The task link selects the current/latest execution; immutable attempt selection belongs to PR4. The source session may be unavailable after it ends. Diff, checks and artifacts explicitly say not recorded until their respective increments supply actual evidence. Nothing in model prose is treated as a check result. Existing explicit retry/cancel/ACP permission controls remain separate.
+
+Verification uses native/ACP fixture processes, summary unit tests and the dedicated OPA browser suite, including escaped output, unknown evidence, copy and a narrow viewport. No paid/live model run is claimed.

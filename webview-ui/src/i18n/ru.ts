@@ -1,4 +1,26 @@
 export const ru: Record<string, string> = {
+  'Summary copied.': 'Итог скопирован.',
+  'Task summary': 'Итог задачи',
+  Unknown: 'Неизвестно',
+  'Run ID': 'ID запуска',
+  Executor: 'Исполнитель',
+  Started: 'Начало',
+  Finished: 'Завершение',
+  Duration: 'Длительность',
+  seconds: 'сек.',
+  'Recorded tokens (input / output)': 'Наблюдаемые токены (вход / выход)',
+  'Usage observations without cost': 'Наблюдения без стоимости',
+  'Only usage observed in this run is shown. Missing observations remain unknown; costs are not invoices.':
+    'Показаны только наблюдения этого запуска. Пропуски остаются неизвестными; стоимость не является счётом.',
+  'Git diff, quality checks and artifacts: not recorded in this increment.':
+    'Git diff, проверки качества и артефакты: в этом инкременте не записываются.',
+  'No result text recorded.': 'Текст результата не записан.',
+  'Result truncated: only the last 8000 characters were retained.':
+    'Результат сокращён: сохранены последние 8000 символов.',
+  'Source session': 'Исходная сессия',
+  'Copy summary': 'Копировать итог',
+  'Summary text': 'Текст итога',
+
   'Open in IDE': 'Открыть в IDE',
   'Open in VS Code': 'Открыть в VS Code',
   'IDE availability cannot be detected here. Copy the folder path if opening is unsupported.':

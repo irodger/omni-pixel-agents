@@ -24,7 +24,7 @@ Project editing has no live agent characters or directory-to-area assignment con
 
 Planning only: the PR numbers below name intended increments, not delivered features or existing implementation PRs. Reviewed against [main b0f256e](https://github.com/irodger/omni-pixel-agents/commit/b0f256ed7ba2e97550621ab12c6e951d1f62ebb0), current FORMAT/ADAPTERS and repository issues; no existing feature issues were found. ACP, Ambient, passive Kanban and project office layouts/editor are already delivered and are not repeated here. Existing latest-run results, attention projections and producer/task journals are foundations, not a complete run/event history UI.
 
-Deep Links (PR1 / #10) has an implementation prepared for review; see [usage and verification](DEEP_LINKS.md). It adds passive project/task/source-session routes and credential-free sharing; it does not change execution permissions. Other increments below remain planned.
+Deep Links (PR1 / #10) has an implementation prepared for review; see [usage and verification](DEEP_LINKS.md). It adds passive project/task/source-session routes and credential-free sharing; it does not change execution permissions. Task Summary (PR2 / #11) is also prepared for review; see [evidence and limits](TASK_SUMMARY.md). Later increments below remain planned.
 
 Each linked issue contains scope, acceptance checks, migration/verification requirements and risks. S/M/L are relative complexity, not time estimates. Dependencies are prerequisites; numbering is the suggested review sequence, not a demand for a single large release.
 

@@ -72,9 +72,22 @@ describe('task dispatch', () => {
     const done = await finished(store);
     expect(done.status).toBe('done');
     expect(done.execution?.output).toContain('Done from fixture');
+    expect(done.execution?.executorId).toBe('codex');
+    expect(done.execution?.provider).toBe('codex');
+    expect(done.execution?.sessionId).toBe('test');
+    expect(done.execution?.usage?.[0].inputTokens).toBe(10);
+    expect(done.execution?.usage?.[0].cost).toBeUndefined();
+    expect(done.execution?.outputTruncated).toBe(false);
     expect(opaWorkSnapshot(store).usage).toHaveLength(1);
     expect(readFileSync(done.execution!.journal, 'utf8')).toContain('usage.reported');
     expect(done.projectPath).toBe(project);
+  });
+  it('labels bounded result output instead of implying completeness', async () => {
+    const { store, command } = setup(success.replace('Done from fixture', 'x'.repeat(8100)));
+    executeTaskCommand(store, command);
+    const done = await finished(store);
+    expect(done.execution?.output).toHaveLength(8000);
+    expect(done.execution?.outputTruncated).toBe(true);
   });
   it('preserves launch failures and permits explicit retry', async () => {
     const { store, command } = setup("process.stderr.write('fixture failure'); process.exit(2)");

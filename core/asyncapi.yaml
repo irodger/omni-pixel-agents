@@ -1570,6 +1570,12 @@ components:
       required: [runId, state, journal, startedAt]
       properties:
         runId: { type: string }
+        executorId: { type: string }
+        provider: { type: string }
+        sessionId: { type: string }
+        sourceAgentId: { type: string }
+        usage: { type: array, items: { $ref: '#/components/schemas/OpaUsageRecord' } }
+        outputTruncated: { type: boolean }
         state: { type: string }
         journal: { type: string }
         permissions: { type: array, items: { $ref: '#/components/schemas/OpaPermission' } }

@@ -129,7 +129,7 @@ function start(
     updateTaskExecution(
       store,
       task,
-      { runId, state: 'running', journal, startedAt },
+      { runId, executorId: executor.id, state: 'running', journal, startedAt },
       'in_progress',
     );
   } catch (error) {
@@ -141,14 +141,35 @@ function start(
     completed = false,
     output = '';
   let lastEvent: OpaEvent | undefined;
+  let source: { provider?: string; sessionId?: string; sourceAgentId?: string } = {};
+  let outputTruncated = false;
+  let usageOverflow = false;
+  const usage = new Map<string, import('../../../core/src/opa/work.js').OpaUsage>();
   const record = (event: OpaEvent) => {
     appendFileSync(journal, `${JSON.stringify(event)}\n`);
     office.accept(event);
     lastEvent = event;
+    if (event.type === 'session.started')
+      source = {
+        provider: event.provider,
+        sessionId: event.sessionId,
+        sourceAgentId: event.agentId,
+      };
+    if (event.type === 'usage.reported' && !usageOverflow) {
+      const id = JSON.stringify([event.provider, event.sessionId, event.usage.usageId]);
+      const previous = usage.get(id);
+      if (usage.size >= 1000 && !previous) {
+        usage.clear();
+        usageOverflow = true;
+      } else if (!previous || Date.parse(event.usage.timestamp) >= Date.parse(previous.timestamp))
+        usage.set(id, event.usage);
+    }
     if (event.type === 'turn.failed') failed = true;
     if (event.type === 'turn.completed') completed = true;
-    if (event.type === 'message' && event.role === 'assistant')
+    if (event.type === 'message' && event.role === 'assistant') {
+      outputTruncated ||= output.length + event.text.length > 8000;
       output = (output + event.text).slice(-8000);
+    }
   };
   // Arguments are passed directly, never interpolated into a shell command.
   const native = nativeAdapters.find((adapter) => adapter.id === executor.id);
@@ -192,6 +213,8 @@ function start(
       task,
       {
         runId,
+        executorId: executor.id,
+        ...source,
         state: 'running',
         journal,
         startedAt,
@@ -305,6 +328,10 @@ function start(
         task,
         {
           runId,
+          executorId: executor.id,
+          ...source,
+          usage: usageOverflow ? undefined : [...usage.values()],
+          outputTruncated,
           journal,
           startedAt,
           state: cancelled

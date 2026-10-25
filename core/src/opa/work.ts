@@ -10,6 +10,12 @@ export interface OpaTask {
   assignee?: string;
   execution?: {
     runId: string;
+    executorId?: string;
+    provider?: string;
+    sessionId?: string;
+    sourceAgentId?: string;
+    usage?: OpaUsage[];
+    outputTruncated?: boolean;
     state: string;
     journal: string;
     startedAt: number;
