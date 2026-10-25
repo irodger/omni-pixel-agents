@@ -1,3 +1,5 @@
+import type { PermissionRequest } from './adapters/types.js';
+
 /** Durable project work; independent of any agent process or renderer. */
 export type TaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
 export interface OpaTask {
@@ -14,6 +16,7 @@ export interface OpaTask {
     finishedAt?: number;
     output?: string;
     error?: string;
+    permissions?: PermissionRequest[];
   };
   createdAt: number;
   updatedAt: number;
@@ -42,13 +45,16 @@ export interface OpaWorkData {
 export type OpaTaskCommand = {
   requestId: string;
   projectPath: string;
-  action: 'create' | 'update';
+  action: 'create' | 'update' | 'permission';
   taskId?: string;
   title?: string;
   status?: TaskStatus;
   assignee?: string;
   expectedRevision?: number;
   launch?: boolean;
+  runId?: string;
+  permissionId?: string;
+  optionId?: string;
 };
 
 export const taskStatuses: readonly TaskStatus[] = ['open', 'in_progress', 'done', 'cancelled'];

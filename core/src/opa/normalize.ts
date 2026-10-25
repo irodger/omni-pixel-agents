@@ -140,6 +140,8 @@ export class OpaNormalizer {
               : undefined,
         };
         if (isUsage(usage)) data.push({ type: 'usage.reported', usage });
+      } else if (r.type === 'opa.run.text' && typeof p.text === 'string') {
+        data.push({ type: 'message', role: 'assistant', text: p.text });
       } else if (r.type === 'session.created') {
         // Bootstrap below carries the source's role/name and parent relation.
       } else if (r.type === 'session.deleted') data.push({ type: 'session.ended' });

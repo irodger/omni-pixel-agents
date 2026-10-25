@@ -36,7 +36,7 @@ Preview: `http://127.0.0.1:3101/`, with demonstration events only. No real user 
 - Created a Russian demo task through the browser, assigned an ownership label, changed status to in progress. Restarted the actual preview server: task, owner, revision and status survived; the office shortcut showed one active task.
 - Three explicitly synthetic usage observations cover Codex unknown price, an OpenCode estimate and a source-reported amount. Project filtering showed 16,000 input / 1,800 output tokens; all-project view showed 17,500 / 2,100. Missing cost remained unknown (1/3), separate from estimated USD 0.0123 and reported USD 0.004.
 - After server restart all three observations and Russian language remained visible. Durable replay/replacement, revision conflicts, storage failure acknowledgements, authenticated REST and tokenless WebSocket denial are covered by tests. File adapter tests reopen the actual saved state alongside seats/projects.
-- No paid agent execution or real billing was used. Assignment does not dispatch work. VS Code transport compiles and shares the task services, but its native UI was not exercised.
+- No paid agent execution or real billing was used. At that stage assignment was metadata; the executor-dispatch increment below adds explicit launch on new assignment. VS Code transport compiles and shares the task services, but its native UI was not exercised.
 - Screenshots: `/private/tmp/opa-tasks-ru.png`, `/private/tmp/opa-usage-ru.png`.
 
 ## Executor dispatch
@@ -47,3 +47,12 @@ Preview: `http://127.0.0.1:3101/`, with demonstration events only. No real user 
 - CLI `--no-terminal` now describes embedded terminals only; authenticated task dispatch is a separate process capability. Source journal task events remain inert metadata and do not dispatch on replay.
 
 - Browser dispatch verification used a separate server on port 3102 and an explicit fake Codex executable, isolated home/project, no model calls. Selecting Codex and saving the task changed it to in progress, then done; the returned fixture text was visible in the task. Screenshot: `/private/tmp/opa-auto-assignment.png`. The regular port 3101 preview retains real executable discovery.
+
+## Adapter layer and product documentation (2026-10-25)
+
+- README is a product overview with real, labelled fixture screenshots and separate EN/RU/DE/ES editions. All local Markdown targets were checked. DE/ES are documentation localizations; application UI remains EN/RU. Pixel Agents attribution and original README remain present.
+- Build passed (95 generated models), with the inherited React dependency warning and large-chunk advisory. Full server suite: 767 tests / 43 files. Full UI suite: 204 tests / 22 files.
+- Adapter tests cover executable discovery, conservative capabilities, malformed config/native fallback, no automatic paid fallback, ACP v1/v2 version mismatch, text/tool normalization, privacy exclusions and cumulative-usage omission, request timeouts/close, unadvertised reverse methods, explicit permission selection/cancellation. Existing native fixtures still pass.
+- An actual subprocess fixture exercises ACP initialization → new session → prompt → reverse permission → explicit user reply → result → task completion and portable journal. Stale run/permission decisions are rejected. No third-party live ACP model session was launched.
+- Browser verification on isolated port 3102: custom ACP executor appeared alongside Codex; task remained blocked until clicking its explicit allow-once option. It then finished and displayed the fixture result. No model or paid API was called. Screenshot `docs/images/acp-permission.png`; result `/private/tmp/opa-acp-result.png`.
+- Native hooks/plugin paths remain intact. Additional CLIs are planned descriptors, not advertised working integrations. ACP HTTP, optional media/modes/session loading, worktree orchestration, rate-limit recovery and UI DE/ES are not claimed.

@@ -1526,12 +1526,37 @@ components:
         tasks: { type: array, items: { $ref: '#/components/schemas/OpaTaskRecord' } }
         usage: { type: array, items: { $ref: '#/components/schemas/OpaUsageRecord' } }
         executors: { type: array, items: { $ref: '#/components/schemas/OpaExecutor' } }
+    OpaAdapterCapabilities:
+      type: object
+      required: [observe, prompt, cancel, permissions, loadSession]
+      properties:
+        observe: { type: boolean }
+        prompt: { type: boolean }
+        cancel: { type: boolean }
+        permissions: { type: boolean }
+        loadSession: { type: boolean }
     OpaExecutor:
       type: object
       required: [id, name]
       properties:
         id: { type: string }
         name: { type: string }
+        transport: { type: string }
+        capabilities: { $ref: '#/components/schemas/OpaAdapterCapabilities' }
+    OpaPermission:
+      type: object
+      required: [id, title, options]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        options: { type: array, items: { $ref: '#/components/schemas/OpaPermissionOption' } }
+    OpaPermissionOption:
+      type: object
+      required: [optionId, name, kind]
+      properties:
+        optionId: { type: string }
+        name: { type: string }
+        kind: { type: string }
     OpaExecution:
       type: object
       required: [runId, state, journal, startedAt]
@@ -1539,6 +1564,7 @@ components:
         runId: { type: string }
         state: { type: string }
         journal: { type: string }
+        permissions: { type: array, items: { $ref: '#/components/schemas/OpaPermission' } }
         startedAt: { type: number }
         finishedAt: { type: number }
         output: { type: string }
@@ -1599,9 +1625,12 @@ components:
         assignee: { type: string }
         expectedRevision: { type: number }
         launch: { type: boolean }
+        runId: { type: string }
+        permissionId: { type: string }
+        optionId: { type: string }
     OpaTaskAction:
       type: string
-      enum: [create, update]
+      enum: [create, update, permission]
     OpaTaskResult:
       type: object
       required: [type, requestId]

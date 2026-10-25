@@ -220,6 +220,32 @@ export function WorkPanel({
                     <p>
                       {t('Execution')}: {t(task.execution.state)}
                     </p>
+                    {task.execution.state === 'running' &&
+                      task.execution.permissions?.map((permission) => (
+                        <div key={permission.id} className="opa-notice">
+                          <p>{permission.title}</p>
+                          {permission.options.map((option) => (
+                            <button
+                              type="button"
+                              className="opa-button"
+                              key={option.optionId}
+                              disabled={disabled}
+                              onClick={() =>
+                                void send({
+                                  action: 'permission',
+                                  projectPath: task.projectPath,
+                                  taskId: task.id,
+                                  runId: task.execution!.runId,
+                                  permissionId: permission.id,
+                                  optionId: option.optionId,
+                                })
+                              }
+                            >
+                              {option.name} ({option.kind})
+                            </button>
+                          ))}
+                        </div>
+                      ))}
                     {task.execution.error && <p role="alert">{task.execution.error}</p>}
                     {task.execution.output && (
                       <details>

@@ -140,10 +140,25 @@ export interface OpaExecution {
   runId: string;
   state: string;
   journal: string;
+  permissions?: OpaPermission[];
   startedAt: number;
   finishedAt?: number;
   output?: string;
   error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaPermission {
+  id: string;
+  title: string;
+  options: OpaPermissionOption[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaPermissionOption {
+  optionId: string;
+  name: string;
+  kind: string;
   additionalProperties?: Record<string, any>;
 }
 
@@ -175,6 +190,17 @@ export type OpaCostKind = 'reported' | 'estimated';
 export interface OpaExecutor {
   id: string;
   name: string;
+  transport?: string;
+  capabilities?: OpaAdapterCapabilities;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaAdapterCapabilities {
+  observe: boolean;
+  prompt: boolean;
+  cancel: boolean;
+  permissions: boolean;
+  loadSession: boolean;
   additionalProperties?: Record<string, any>;
 }
 
@@ -496,10 +522,13 @@ export interface OpaTaskCommand {
   assignee?: string;
   expectedRevision?: number;
   launch?: boolean;
+  runId?: string;
+  permissionId?: string;
+  optionId?: string;
   additionalProperties?: Record<string, any>;
 }
 
-export type OpaTaskAction = 'create' | 'update';
+export type OpaTaskAction = 'create' | 'update' | 'permission';
 
 export interface WebviewReady {
   type: 'webviewReady';

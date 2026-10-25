@@ -11,8 +11,9 @@ import type {
 import { isTask, isUsage, taskStatuses } from '../../../core/src/opa/work.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
+import { discoverAdapters } from './adapters/registry.js';
 import { registerOpaProject } from './campus.js';
-import { availableExecutors, isTaskRunning } from './execution.js';
+import { isTaskRunning } from './execution.js';
 
 const states = new WeakMap<AgentStateStore, OpaWorkData>();
 function state(store: AgentStateStore): OpaWorkData {
@@ -34,7 +35,9 @@ export function opaWorkSnapshot(store: AgentStateStore) {
         : task,
     ),
     usage: data.usage,
-    executors: availableExecutors().map(({ id, name }) => ({ id, name })),
+    executors: discoverAdapters()
+      .adapters.filter((adapter) => adapter.status === 'available')
+      .map(({ id, name, transport, capabilities }) => ({ id, name, transport, capabilities })),
   };
 }
 function save(store: AgentStateStore, data: OpaWorkData): void {

@@ -19,6 +19,7 @@ import {
   WS_CLOSE_FORBIDDEN_ORIGIN,
   WS_CLOSE_UNAUTHORIZED,
 } from './constants.js';
+import { discoverAdapters } from './opa/adapters/registry.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { OpaOffice } from './opa/office.js';
@@ -116,6 +117,10 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
     stopTaskExecutions(options.store);
   });
   registerHealthRoute(app);
+  app.get('/api/opa/adapters', { preHandler: bearerAuth(options.token) }, async () => {
+    const { adapters, warning } = discoverAdapters();
+    return { adapters, warning };
+  });
   app.get<{ Querystring: { projectPath?: string } }>(
     '/api/opa/tasks',
     { preHandler: bearerAuth(options.token) },

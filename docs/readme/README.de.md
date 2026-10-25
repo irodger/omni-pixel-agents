@@ -1,0 +1,73 @@
+# Omni Pixel Agents
+
+[English](../../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [Español](README.es.md)
+
+**Deine Coding-Agenten in einem lebendigen Pixelbüro.**
+
+Sieh, welches Projekt vorankommt, welcher Agent dich braucht und welche Ressourcen eine Aufgabe verbraucht — ohne allen Agenten denselben Arbeitsablauf aufzuzwingen.
+
+![OPA — project campus](../../docs/images/campus.png)
+
+## Was heute funktioniert
+
+- Ein eigenes Büro pro Projekt, mit Codex- und OpenCode-Aktivität in einer Ansicht.
+- Berechtigungsanfragen, Fehler und ungelesene Ergebnisse erkennen. Freigaben des ursprünglichen Agenten erfolgen in dessen Client.
+- Gemeinsame Aufgabenliste: einen verfügbaren Agenten wählen und die neue Zuweisung zum Start speichern. Ergebnis, Abbruch und bewusster Neustart bleiben an der Aufgabe.
+- Token und gemeldete oder geschätzte Kosten nach Projekt und Zeitraum ansehen. CSV exportieren; fehlende Preise bleiben unbekannt.
+- Die Oberfläche zwischen Englisch und Russisch umschalten. Dieses README gibt es auch auf Deutsch und Spanisch.
+- Das ursprüngliche Pixel-Agents-Büro, den Editor und die Claude-Integration weiterverwenden.
+
+## Lokal ausprobieren
+
+Node.js 20+ und npm sind erforderlich. Den gewünschten Agenten separat installieren und anmelden. Die vom Server ausgegebene Verwaltungsadresse öffnen; ohne Token ist die Oberfläche schreibgeschützt.
+
+```sh
+git clone https://github.com/irodger/omni-pixel-agents.git
+cd omni-pixel-agents
+npm ci
+npm run build
+node dist/cli.js --port 3100 --no-terminal
+```
+
+`--no-terminal` deaktiviert das eingebettete Terminal; Aufgaben können weiterhin ausgeführt werden.
+
+## Vor der Zuweisung
+
+Eine neue Agentenzuweisung startet nach dem Speichern einen Lauf im gewählten Projektordner. Der Aufgabentitel dient als Prompt. Vorhandene Konto- und Modelleinstellungen gelten; Kosten können entstehen. Reine Statusänderungen und Journal-Wiedergaben starten nichts. Pro Projekt läuft eine OPA-Aufgabe gleichzeitig. Nach einem Absturz gibt es keine automatische Fortsetzung.
+
+## Verbindungen
+
+Codex nutzt den nichtinteraktiven JSON-Stream; OpenCode unterstützt Plugin-Ereignisse und Task-JSON. Claude behält die bisherigen Hooks und Transkripte. Der Adapter unterstützt zusätzlich explizit konfigurierte ACP-v1-Agenten über stdio. ACP ersetzt die bestehenden Wege nicht; nicht jeder CLI unterstützt ACP.
+
+ACP-Berechtigungsanfragen werden ausdrücklich in der Aufgabenkarte beantwortet; native Freigaben bleiben im jeweiligen Client.
+
+[Verbindungsanleitung](../../docs/opa/GETTING_STARTED.md) · [Adapter & ACP](../../docs/opa/ADAPTERS.md) · [OPA-Format](../../docs/opa/FORMAT.md)
+
+## Screenshots
+
+Echte, lokal aufgenommene OPA-Oberfläche mit gekennzeichneten Testaufgaben und synthetischen Verbrauchsdaten. Keine bezahlten Live-Sitzungen oder Rechnungen. Die Bilder können einen früheren UI-Stand zeigen.
+
+![OPA — task execution fixture](../../docs/images/task-run.png)
+
+![OPA — synthetic usage and costs](../../docs/images/usage.png)
+
+## Frühes Projekt: Grenzen
+
+OPA ist ein lokaler Fork zum Selbstbauen. Keine npm-/Marketplace-Veröffentlichung und kein gehosteter Dienst. Das OPA-JSONL-Format ist ein Entwurf, kein etablierter Standard. Prozessstarts sind mit Test-Clients geprüft; ein bezahlter End-to-End-Lauf wird nicht behauptet. Die Oberfläche ist EN/RU; DE/ES gelten derzeit nur für das README.
+
+## Roadmap
+
+Office/Ambient im Vollbild; Kanban ohne Start beim Verschieben; getrennte bearbeitbare Raumlayouts; isolierte Git-Worktrees mit geprüften Merges; ein zuverlässiger Ruhebereich bei Rate Limits; geprüfte Adapter für Copilot, Kilo, Gemini, Qwen und Pi. Das sind Pläne, keine fertigen Integrationen.
+
+## Anleitungen und Entwicklung
+
+[Prüfungen](../../docs/opa/VALIDATION.md) · [Recherche](../../docs/opa/RESEARCH.md) · [Originaldokumentation](../../README.upstream.md)
+
+```sh
+npm run build
+npm test
+```
+
+## Danksagung
+
+Basiert auf [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) von Pablo De Lucca und Mitwirkenden, unter der [MIT License](../../LICENSE). Ursprüngliche Urheber- und Grafiknachweise bleiben erhalten; siehe [Originalgrafiken](../../README.upstream.md#office-assets). Aus den verglichenen Forks wurden weder Code noch Grafiken kopiert.

@@ -279,4 +279,5 @@ export const ru: Record<string, string> = {
   'Project folder': 'Папка проекта',
   'Select an office above or enter an existing project folder.':
     'Выберите офис выше или укажите существующую папку проекта.',
+  PERMISSION_STALE: 'Запрос разрешения уже недействителен. Обновите задачу.',
 };

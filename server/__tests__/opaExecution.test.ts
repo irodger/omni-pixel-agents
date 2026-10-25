@@ -10,7 +10,11 @@ vi.mock('node:os', async (original) => ({
   homedir: () => sandbox.home,
 }));
 import { AgentStateStore } from '../src/agentStateStore.js';
-import { executeTaskCommand, stopTaskExecutions } from '../src/opa/execution.js';
+import {
+  availableExecutors,
+  executeTaskCommand,
+  stopTaskExecutions,
+} from '../src/opa/execution.js';
 import { opaWorkSnapshot } from '../src/opa/work.js';
 
 const roots: string[] = [];
@@ -141,5 +145,65 @@ describe('task dispatch', () => {
     expect(done.status).toBe('done');
     expect(done.execution?.output).toContain('OpenCode result');
     expect(opaWorkSnapshot(store).usage[0].inputTokens).toBe(13);
+  });
+  it('keeps native discovery when the ACP config is malformed', () => {
+    setup(success);
+    const directory = join(sandbox.home, '.pixel-agents');
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'opa-adapters.json'), '{broken');
+    expect(availableExecutors().map((e) => e.id)).toContain('codex');
+  });
+  it('runs a configured ACP process and waits for an explicit permission decision', async () => {
+    const { store, project } = setup(success);
+    const file = join(sandbox.home, 'acp.cjs');
+    writeFileSync(
+      file,
+      `const rl=require('node:readline').createInterface({input:process.stdin});let prompt;
+const send=m=>console.log(JSON.stringify({jsonrpc:'2.0',...m}));
+rl.on('line',line=>{const m=JSON.parse(line);
+if(m.method==='initialize')send({id:m.id,result:{protocolVersion:1,agentCapabilities:{}}});
+if(m.method==='session/new')send({id:m.id,result:{sessionId:'acp-fixture'}});
+if(m.method==='session/prompt'){prompt=m.id;send({id:'ask',method:'session/request_permission',params:{sessionId:'acp-fixture',toolCall:{title:'Fixture permission'},options:[{optionId:'allow',name:'Allow once',kind:'allow_once'}]}})}
+if(m.id==='ask' && m.result){send({method:'session/update',params:{sessionId:'acp-fixture',update:{sessionUpdate:'agent_message_chunk',content:{type:'text',text:'ACP fixture result'}}}});send({id:prompt,result:{stopReason:'end_turn'}})}
+});`,
+    );
+    const dir = join(sandbox.home, '.pixel-agents');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'opa-adapters.json'),
+      JSON.stringify({
+        version: 1,
+        agents: [{ id: 'fixture', name: 'ACP fixture', command: process.execPath, args: [file] }],
+      }),
+    );
+    executeTaskCommand(store, {
+      action: 'create',
+      requestId: 'acp-task',
+      title: 'Fixture work',
+      assignee: 'acp:fixture',
+      projectPath: project,
+    });
+    await vi.waitFor(() =>
+      expect(opaWorkSnapshot(store).tasks[0].execution?.permissions).toHaveLength(1),
+    );
+    const task = opaWorkSnapshot(store).tasks[0];
+    const decision = {
+      action: 'permission',
+      requestId: 'decision',
+      projectPath: project,
+      taskId: task.id,
+      runId: task.execution!.runId,
+      permissionId: task.execution!.permissions![0].id,
+      optionId: 'allow',
+    };
+    expect(() => executeTaskCommand(store, { ...decision, runId: 'old' })).toThrow(
+      'PERMISSION_STALE',
+    );
+    executeTaskCommand(store, decision);
+    expect(() => executeTaskCommand(store, decision)).toThrow('PERMISSION_STALE');
+    const done = await finished(store);
+    expect(done.status).toBe('done');
+    expect(done.execution?.output).toContain('ACP fixture result');
+    expect(readFileSync(done.execution!.journal, 'utf8')).toContain('permission.requested');
   });
 });

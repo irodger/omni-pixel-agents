@@ -248,6 +248,22 @@ describe('task API privileges', () => {
       sockets.forEach((s) => s.terminate());
       await app.close();
     };
+    expect((await app.inject({ method: 'GET', url: '/api/opa/adapters' })).statusCode).toBe(401);
+    const catalog = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/opa/adapters',
+        headers: { authorization: 'Bearer test-token' },
+      })
+    ).json();
+    expect(
+      catalog.adapters.find((adapter: { id: string }) => adapter.id === 'claude'),
+    ).toMatchObject({ status: 'observe_only', capabilities: { prompt: false } });
+    expect(
+      catalog.adapters.every(
+        (adapter: Record<string, unknown>) => !('executable' in adapter) && !('command' in adapter),
+      ),
+    ).toBe(true);
     const payload = {
       action: 'create',
       requestId: 't',

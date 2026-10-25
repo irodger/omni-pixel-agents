@@ -1,104 +1,73 @@
-# Omni Pixel Agents (OPA)
+# Omni Pixel Agents
 
-A pixel office for Codex, OpenCode and a portable agent activity history.
+[English](README.md) · [Русский](docs/readme/README.ru.md) · [Deutsch](docs/readme/README.de.md) · [Español](docs/readme/README.es.md)
 
-OPA builds on [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents). The office, assets, layout editor, browser/VS Code transports and Claude integration come from upstream. OPA adds a provider-independent JSONL event format, Codex JSON-stream normalization, an OpenCode plugin, authenticated ingestion and replay.
+**Your coding agents, in one living pixel office.**
 
-This is an early fork maintained at [irodger/omni-pixel-agents](https://github.com/irodger/omni-pixel-agents). No npm or marketplace release has been published. The package remains private until a separate release identity is configured. Existing `pixel-agents` command/settings identifiers and `~/.pixel-agents` storage remain for compatibility; do not run OPA and upstream against the same persisted settings simultaneously.
+See which project is moving, which agent needs you, and what a task used — without changing every agent to the same workflow.
 
-## Run the office
+![OPA — project campus](docs/images/campus.png)
 
-Requires Node.js 20+.
+## What you can do today
+
+- Give each project its own office, with Codex and OpenCode activity in the same view.
+- Spot permission requests, failures and unread results; answer source-agent approvals in their own client.
+- Keep a shared task list, choose an available executor, and start it by saving a new assignment. Results, cancellation and explicit retries stay with the task.
+- Inspect tokens and source-reported or estimated costs by project and period. Export CSV; missing prices stay unknown.
+- Switch the interface between English and Russian. This README also has German and Spanish editions.
+- Keep using the original Pixel Agents office, editor and Claude integration.
+
+## Try it locally
+
+Build from source. Node.js 20+ and npm are required. Install and authenticate your chosen agent separately. Open the management URL printed by the server; tokenless pages are read-only.
 
 ```sh
-npm install
+git clone https://github.com/irodger/omni-pixel-agents.git
+cd omni-pixel-agents
+npm ci
 npm run build
 node dist/cli.js --port 3100 --no-terminal
 ```
 
-Open the URL printed by the server. Its token is used by the event bridge. `--no-terminal` disables embedded terminal launches/attachments. Task assignment can still start noninteractive Codex/OpenCode processes.
+`--no-terminal`: no embedded terminal; task execution remains available.
 
-## Project campus and attention
+## Before you assign a task
 
-The app opens on **Campus**. Each observed OPA working directory gets its own office with independent seats, characters and movement. Codex and OpenCode sessions in the same directory share that office. The project list is retained on disk for the current host; an office remains after its last session ends. Empty offices do not resurrect old sessions — replay their journals to restore activity after restarting the server.
+A new nonempty executor assignment starts a run after you save it. The task title becomes the prompt, in the selected project folder. The agent uses your existing account/model settings and may incur costs. Status changes alone and journal replay do not launch agents. One OPA task per project runs at a time. After a crash, runs require an explicit decision; they never silently resume.
 
-**Needs you** lists permission requests first, then failed and completed turns you have not viewed. Requests show elapsed waiting time and are highlighted after two minutes. Opening a completed result marks it read in this browser; opening a permission request cannot approve it. Respond in Codex/OpenCode. A new turn clears the previous result; errors remain distinguishable from successful completion.
+## How it connects
 
-Use the project selector to focus one office, or **Back to office** for the original editor and controls. **Campus** returns to the overview. The campus currently uses the existing office layout as the starting design for every project. Individual campus layout editing and desktop notifications remain future features.
+Codex uses its noninteractive JSON stream; OpenCode supports a plugin and task-run JSON; Claude retains the upstream hooks/transcript path. The adapter layer also accepts explicitly configured ACP v1 agents over stdio. ACP is an additional transport, not a replacement or a promise that every CLI speaks ACP.
 
-Project paths live in `opaProjects` in the host's existing `~/.pixel-agents/<namespace>-state.json`. Read marks are local browser preferences, capped at 2,000 result IDs. Agent activity remains recoverable from the OPA JSONL journal. Only OPA-connected agents appear in Campus; the original office continues to show upstream Claude sessions.
+ACP permission requests are answered explicitly in the task card; native source approvals remain in their own client.
 
-## Language, tasks and expenses
+[Connection guide](docs/opa/GETTING_STARTED.md) · [Adapters & ACP](docs/opa/ADAPTERS.md) · [OPA format](docs/opa/FORMAT.md)
 
-Switch between English and Russian in the header; this browser remembers the choice. User content, paths and source messages retain their original language.
+## Screenshots
 
-**Tasks** stores a shared project backlog: title, executor and status (open, in progress, done, cancelled). Select a project before creating a task. Choose an installed, runnable Codex/OpenCode client from the executor list: saving a new assignment starts it automatically in that project. The task title is the prompt. Existing credentials/model settings are used; usage may incur costs. Changes are acknowledged after storage and protected against overwriting a newer revision. The management URL printed by the server enables editing; tokenless connections are read-only.
+Real OPA UI captured locally with labelled fixture tasks/events and synthetic usage. They demonstrate the interface, not paid live sessions or invoices. Screenshots may use an earlier UI revision.
 
-Execution changes the task to in progress, then done only after a successful completion event and process exit. Results and launch failures appear on the task; failed/interrupted tasks can be retried explicitly. Cancelling terminates the running process (and its process group on POSIX). Only one OPA task runs in a project at a time. Title edits/status changes do not silently rerun a completed assignment. Replayed `task.upserted` events never launch processes.
+![OPA — task execution fixture](docs/images/task-run.png)
 
-Executors are discovered on the host PATH and checked with `--version`; this does not verify account authentication or quota. Codex runs `exec --json --sandbox workspace-write` with the prompt on stdin; no approval/sandbox bypass is added. OpenCode runs `run --format json` under its existing local permission configuration. Both reuse local credentials and defaults. Each run writes a normalized journal under `~/.pixel-agents/opa-runs/`. A server crash marks persisted running tasks interrupted; OPA never automatically retries a potentially paid run on restart.
+![OPA — synthetic usage and costs](docs/images/usage.png)
 
-**Usage & costs** filters observations by project and calendar period, totals tokens, separates source-reported amounts from estimates, and exports CSV. Missing prices remain unknown, including Codex token-only records. A reported amount is source data, not proof of an invoice. Current monetary records use USD; no price table or currency conversion is inferred.
+## Early project, clear limits
 
-Tasks and usage persist in `opaWork` alongside the project registry. Replaying the same normalized usage journal replaces observations by durable source key instead of adding charges. The draft v0.2 format extends v0.1 with `usage.reported` and `task.upserted`; lifecycle events remain readable as v0.1.
+OPA is a local, source-built fork. No npm/marketplace release or hosted service is offered. The OPA JSONL format is a draft, not an established standard. Native task execution has fixture coverage; a real paid end-to-end run is not claimed. The UI is EN/RU; DE/ES currently apply to the README only.
 
-## Codex
+## What is still on the roadmap
 
-Codex's documented `exec --json` output is the supported source. This does not discover existing interactive Codex Desktop/CLI chats.
+Full-screen Office/Ambient mode; kanban without execution on drag; separate editable project layouts; isolated Git worktrees with reviewed merges; a reliable rate-limit rest room; verified adapters for Copilot, Kilo, Gemini, Qwen and Pi. These are plans, not current integrations.
 
-```sh
-export OPA_TOKEN='token-from-the-office-url'
-set -o pipefail
-codex exec --json 'Summarize this repository' \
-  | node dist/opa-bridge.js codex --url http://127.0.0.1:3100 \
-  > agent-history.opa.jsonl
-```
+## Guides & development
 
-The bridge writes normalized history to stdout and mirrors it to the office. Source failures map to `turn.failed`; shell `pipefail` also preserves the source command's nonzero exit status. To normalize a saved Codex stream without running an agent:
+[Validation](docs/opa/VALIDATION.md) · [Research](docs/opa/RESEARCH.md) · [Upstream documentation](README.upstream.md)
 
 ```sh
-node dist/opa-bridge.js codex --cwd /path/to/project < codex.jsonl > agent-history.opa.jsonl
-```
-
-## OpenCode
-
-After building, copy `dist/integrations/opa-opencode.mjs` into your project's `.opencode/plugins/opa.ts` (create that directory if needed). This is an explicit project opt-in; OPA does not modify global OpenCode settings.
-
-```sh
-export OPA_URL=http://127.0.0.1:3100
-export OPA_TOKEN='token-from-the-office-url'
-export OPA_LOG="$PWD/agent-history.opa.jsonl"
-opencode
-```
-
-The plugin observes session, tool, idle, error, permission and completed assistant-message usage events. `OPA_LOG` and live delivery are independently optional. The history file's parent directory must exist. Tool arguments, command output and source payloads are omitted. Delivery errors are reported without interrupting the agent; replay the journal to recover events after an outage. There is no automatic retry or historical catch-up.
-
-For a captured OpenCode plugin event stream (one `{type, properties}` object per line), use `node dist/opa-bridge.js opencode` with the same options as Codex. OpenCode CLI `run --format json` is a different format and is not accepted by this adapter.
-
-## Replay and format
-
-```sh
-node dist/opa-bridge.js replay --url http://127.0.0.1:3100 < agent-history.opa.jsonl
-```
-
-Replay sends events in file order, without timing delays. The running server ignores previously applied sequence numbers from the same stream. Restart the office for a fresh replay. Journals are the restore source for OPA agents; they are not persisted as Claude transcript sessions.
-
-- [OPA v0.2 format and extension rules](docs/opa/FORMAT.md)
-- [Machine-readable JSON Schema](docs/opa/event.schema.json)
-- [Fork comparison and borrowing decisions](docs/opa/RESEARCH.md)
-- [Sample Codex stream](examples/opa/codex.jsonl)
-- [Original upstream documentation](README.upstream.md)
-
-The protocol is a draft, not an established industry standard. The current office shows activity and provider labels. Role/parent metadata is portable but does not yet create role-specific sprites or parent-child visual links. Messages remain in the journal rather than a chat/history panel; the campus shows turn errors in agent details. The `+ Agent` browser action still launches the upstream Claude integration; Codex/OpenCode use task assignment or the connections above.
-
-## Checks
-
-```sh
-npm run check-types
-npm run lint
+npm run build
 npm test
 ```
 
-## Attribution and license
+## Credits
 
-Based on Pixel Agents by Pablo De Lucca and contributors, under the [MIT License](LICENSE). Existing copyright and asset credits are preserved. See [upstream asset documentation](README.upstream.md#office-assets). No code or artwork from the compared forks has been copied into this first OPA implementation.
+Based on [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) by Pablo De Lucca and contributors, under the [MIT License](LICENSE). Original copyright and asset credits are preserved; see [upstream assets](README.upstream.md#office-assets). No code or artwork from the compared forks has been copied.
