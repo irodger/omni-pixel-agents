@@ -2,7 +2,7 @@ import type { OpaProjectSnapshot } from '../../../core/src/messages.js';
 import type { OpaTask } from '../../../core/src/opa/work.js';
 
 export type CampusRoute = {
-  view: 'overview' | 'tasks' | 'usage';
+  view: 'overview' | 'tasks' | 'usage' | 'attention';
   project?: string;
   task?: string;
   provider?: string;
@@ -40,7 +40,10 @@ export function parseRoute(hash: string): CampusRoute | null {
   if ([...params.keys()].some((key) => !fields.includes(key) || params.getAll(key).length !== 1))
     return null;
   if ([...params.values()].some((value) => !valid(value))) return null;
-  if (params.get('v') !== '1' || !['overview', 'tasks', 'usage'].includes(params.get('view') ?? ''))
+  if (
+    params.get('v') !== '1' ||
+    !['overview', 'tasks', 'usage', 'attention'].includes(params.get('view') ?? '')
+  )
     return null;
   const route = Object.fromEntries([...params].filter(([key]) => key !== 'v')) as CampusRoute;
   if ((route.task || route.session || route.provider || route.agent) && !route.project) return null;

@@ -58,4 +58,5 @@ test('final summary distinguishes run outcome, unknown evidence and escaped outp
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('fixture-run');
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/opa-summary-mobile.png' });
 });

@@ -8,8 +8,10 @@ import { t, useLanguage } from '../i18n/index.js';
 import { LanguageSelect } from '../i18n/LanguageSelect.js';
 import type { OfficeLayout } from '../office/types.js';
 import { AmbientOffice } from './AmbientOffice.js';
-import { ATTENTION_DELAY_MS, attentionRows, needsAttention, waitingLabel } from './attention.js';
+import { ATTENTION_DELAY_MS, needsAttention, waitingLabel } from './attention.js';
+import { AttentionPanel } from './AttentionPanel.js';
 import { resolveRoute, ROOT_ROUTE } from './deepLinks.js';
+import { inboxItems } from './inbox.js';
 import { LinkControls } from './LinkControls.js';
 import { ProjectCanvas } from './ProjectCanvas.js';
 import { ProjectDecor } from './ProjectDecor.js';
@@ -49,9 +51,9 @@ export function CampusPanel({
   const exitAmbient = useCallback(() => setAmbientId(null), []);
   const [agentId, setAgentId] = useState<number | null>(null);
   const view = current.view;
-  const setView = (view: 'overview' | 'tasks' | 'usage') =>
+  const setView = (view: 'overview' | 'tasks' | 'usage' | 'attention') =>
     navigate({ view, project: current.project });
-  const rows = attentionRows(projects, seen);
+  const inbox = inboxItems(projects, campus.tasks, seen);
   const agents = projects.flatMap((p) => p.agents);
   const selected = current.session
     ? projects
@@ -130,27 +132,35 @@ export function CampusPanel({
             <strong>{agents.filter((a) => a.status === 'working').length}</strong> {t('working')}
           </span>
           <span>
-            <strong>{agents.filter((a) => a.status === 'blocked').length}</strong>{' '}
+            <strong>{inbox.filter((item) => item.kind === 'blocked').length}</strong>{' '}
             {' ' + t('waiting for you')}
           </span>
           <span>
-            <strong>{rows.filter(({ agent }) => agent.status !== 'blocked').length}</strong>{' '}
+            <strong>{inbox.filter((item) => item.kind !== 'blocked').length}</strong>{' '}
             {countNoun(
-              rows.filter(({ agent }) => agent.status !== 'blocked').length,
+              inbox.filter((item) => item.kind !== 'blocked').length,
               'unread results',
               language,
             )}
           </span>
         </div>
         <nav className="opa-view-tabs" aria-label={t('View')}>
-          {(['overview', 'tasks', 'usage'] as const).map((item) => (
+          {(['overview', 'tasks', 'usage', 'attention'] as const).map((item) => (
             <button
               key={item}
               className="opa-button"
               aria-pressed={view === item}
               onClick={() => setView(item)}
             >
-              {t(item === 'overview' ? 'Overview' : item === 'tasks' ? 'Tasks' : 'Usage & costs')}
+              {t(
+                item === 'overview'
+                  ? 'Overview'
+                  : item === 'tasks'
+                    ? 'Tasks'
+                    : item === 'attention'
+                      ? 'Attention Inbox'
+                      : 'Usage & costs',
+              )}
             </button>
           ))}
         </nav>
@@ -174,7 +184,9 @@ export function CampusPanel({
                 </select>
               </label>
             </div>
-            {view !== 'overview' ? (
+            {view === 'attention' ? (
+              <AttentionPanel campus={campus} projectId={projectId} navigate={navigate} />
+            ) : view !== 'overview' ? (
               <WorkPanel
                 key={`${view}:${projectId ?? 'all'}`}
                 campus={campus}
@@ -281,43 +293,40 @@ export function CampusPanel({
             <aside className="opa-attention" aria-label={t('Needs attention')}>
               <div className="opa-section-heading">
                 <h2>{t('Needs you')}</h2>
-                <span className="opa-count">{rows.length}</span>
+                <span className="opa-count">{inbox.length}</span>
               </div>
-              <p className="opa-muted">
-                {t('Permission requests stay here until answered in your agent.')}
-              </p>
-              {!rows.length && (
+              <button
+                className="opa-button"
+                onClick={() => navigate({ view: 'attention', project: current.project })}
+              >
+                {t('Attention Inbox')}
+              </button>
+              {!inbox.length && (
                 <p className="opa-all-clear" role="status">
                   {t('All caught up.')}
                 </p>
               )}
               <div className="opa-attention-list">
-                {rows.map(({ project, agent }) => {
+                {inbox.slice(0, 5).map((item) => {
                   const overdue =
-                    agent.status === 'blocked' &&
-                    agent.blockedSince !== undefined &&
-                    now - agent.blockedSince >= ATTENTION_DELAY_MS;
+                    item.kind === 'blocked' &&
+                    item.since !== undefined &&
+                    now - item.since >= ATTENTION_DELAY_MS;
                   return (
                     <button
-                      key={agent.id}
+                      key={item.id}
                       className={`opa-attention-item ${overdue ? 'opa-overdue' : ''}`}
-                      onClick={() => openAgent(project, agent)}
+                      onClick={() => navigate(item.route)}
                     >
-                      <span className="opa-attention-top">
-                        <strong>{agent.name}</strong>
-                        <span className={`opa-dot opa-${agent.status}`} />
-                      </span>
+                      <strong>{item.title}</strong>
                       <small>
-                        {project.name} · {agent.provider}
+                        {projects.find((p) => p.id === item.project)?.name ?? item.project}
                       </small>
                       <span>
-                        {agent.status === 'blocked'
-                          ? waitingLabel(agent.blockedSince, now, language)
-                          : agent.status === 'error'
-                            ? t('Turn failed — open to review')
-                            : t('Finished — open to review')}
+                        {item.kind === 'blocked'
+                          ? waitingLabel(item.since, now, language)
+                          : t(item.state)}
                       </span>
-                      {overdue && <small>{t('Waiting for more than two minutes')}</small>}
                     </button>
                   );
                 })}
@@ -380,7 +389,7 @@ export function CampusPanel({
           projectId={ambientId}
           layout={layout}
           connection={campus.connection}
-          attentionCount={rows.length}
+          attentionCount={inbox.length}
           onProject={setAmbientId}
           onExit={exitAmbient}
           onTasks={() => {

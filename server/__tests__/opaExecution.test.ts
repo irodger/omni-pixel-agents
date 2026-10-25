@@ -78,6 +78,13 @@ describe('task dispatch', () => {
     expect(done.execution?.usage?.[0].inputTokens).toBe(10);
     expect(done.execution?.usage?.[0].cost).toBeUndefined();
     expect(done.execution?.outputTruncated).toBe(false);
+    const journal = readFileSync(done.execution!.journal, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    expect(journal.find((event) => event.type === 'turn.completed').id).toBe(
+      done.execution?.resultEventId,
+    );
     expect(opaWorkSnapshot(store).usage).toHaveLength(1);
     expect(readFileSync(done.execution!.journal, 'utf8')).toContain('usage.reported');
     expect(done.projectPath).toBe(project);

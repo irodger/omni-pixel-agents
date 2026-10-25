@@ -1576,6 +1576,7 @@ components:
         sourceAgentId: { type: string }
         usage: { type: array, items: { $ref: '#/components/schemas/OpaUsageRecord' } }
         outputTruncated: { type: boolean }
+        resultEventId: { type: string }
         state: { type: string }
         journal: { type: string }
         permissions: { type: array, items: { $ref: '#/components/schemas/OpaPermission' } }

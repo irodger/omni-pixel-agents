@@ -148,6 +148,7 @@ export interface OpaExecution {
   sourceAgentId?: string;
   usage?: OpaUsageRecord[];
   outputTruncated?: boolean;
+  resultEventId?: string;
   state: string;
   journal: string;
   permissions?: OpaPermission[];

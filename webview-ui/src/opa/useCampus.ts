@@ -104,6 +104,19 @@ export function useCampus() {
       }
       return next;
     });
+  const acknowledgeId = (id: string, relatedEventId?: string) =>
+    setSeen((current) => {
+      const added = [id, ...(relatedEventId ? [relatedEventId] : [])];
+      const next = [...current.filter((entry) => !added.includes(entry)), ...added].slice(
+        -MAX_SEEN_EVENTS,
+      );
+      try {
+        localStorage.setItem(SEEN_KEY, JSON.stringify(next));
+      } catch {
+        /* Browser-local memory remains available. */
+      }
+      return next;
+    });
   const saveTask = (command: Omit<OpaTaskCommand, 'requestId'>) => saveCommand(command);
   const saveLayout = (command: Omit<SaveLayout, 'requestId'>) => saveCommand(command);
   return {
@@ -114,6 +127,7 @@ export function useCampus() {
     seen,
     now,
     acknowledge,
+    acknowledgeId,
     connection,
     tasks,
     usage,
