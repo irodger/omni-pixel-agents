@@ -1,4 +1,20 @@
 export const ru: Record<string, string> = {
+  'Office decor': 'Оформление офиса',
+  'Independent project layout': 'Собственная планировка проекта',
+  'Uses shared office layout': 'Используется общая планировка',
+  'Design an office in the main editor, then copy it here or import its exported layout.':
+    'Оформите офис в основном редакторе, затем скопируйте сюда или загрузите экспортированную планировку.',
+  'Copy shared office': 'Скопировать общий офис',
+  'Import project layout': 'Загрузить планировку проекта',
+  'Use shared office': 'Использовать общий офис',
+  'Reset only this project to the shared office?':
+    'Сбросить только этот проект к общей планировке?',
+  LAYOUT_CONFLICT:
+    'Планировка изменена в другом окне. Проверьте обновлённый офис и повторите действие.',
+  LAYOUT_INVALID: 'Некорректный файл планировки.',
+  LAYOUT_STORAGE_UNAVAILABLE: 'Хранилище планировок недоступно.',
+  'Saving…': 'Сохраняем…',
+
   '+ Agent': '+ Агент',
   '+ Directory': '+ Каталог',
   '. Opening this panel does not approve the request.':

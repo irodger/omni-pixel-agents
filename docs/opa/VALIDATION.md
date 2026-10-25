@@ -66,3 +66,10 @@ Preview: `http://127.0.0.1:3101/`, with demonstration events only. No real user 
 - Browser on narrow viewport: columns scroll horizontally and native status selectors provide a touch/keyboard alternative. Board's task form opens separately and no task is created by opening it. Screenshots are labelled demo data: `docs/images/ambient.png` and `docs/images/kanban.png`.
 - Connection-loss verification found and fixed a missing reconnect handshake in the existing WebSocket transport. Reconnect requests only a fresh `webviewReady` snapshot, never replays already-sent task commands. Two transport fixtures cover this and duplicate/absent initialization. Actual server stop/restart restored Ambient connection and activity without reloading the page.
 - No paid agents/models were launched. Project-specific layout editing, worktree isolation/merge and rate-limit room remain on the roadmap. Native touch hardware and every browser's fullscreen denial mode were not exercised; the existing window-filling view remains the fallback.
+
+## 2026-10-26: project layout persistence
+
+- Server: 770 tests across 43 files pass; UI: 210 tests across 24 files pass.
+- Added real-file coverage: same basename/different project paths, isolated reset, restart restoration, revision conflict after reset, malformed layout rejection, persistence through agents/seats writes, and no writes to the shared layout file.
+- Shared main-office editor remains the design workshop; direct in-project canvas editing is explicitly a future increment.
+- Full build and 7 package-contract tests pass. Browser smoke check on isolated demo data: pin shared layout, receive success state, reload and confirm restored project override. Screenshot: `docs/images/project-layout.png`.

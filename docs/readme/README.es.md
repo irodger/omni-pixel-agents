@@ -1,5 +1,7 @@
 # Omni Pixel Agents
 
+Cada proyecto puede guardar su distribución: copiar la oficina compartida, importar un archivo o restablecer solo ese proyecto. Los muebles se diseñan en el editor principal existente.
+
 [English](../../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [Español](README.es.md)
 
 **Tus agentes de programación, en una oficina de píxeles con vida.**

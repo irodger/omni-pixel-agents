@@ -13,7 +13,11 @@
 import type { OpaWorkData } from './opa/work.js';
 import type { PersistedAgent } from './schemas.js';
 
+export type ProjectLayouts = Record<string, { revision: number; layout?: Record<string, unknown> }>;
+
 export interface StateAdapter {
+  loadProjectLayouts?(): ProjectLayouts;
+  saveProjectLayouts?(data: ProjectLayouts): void;
   // ── Per-adapter persisted state (agents + seats) ────────────────────
 
   loadAgents(): PersistedAgent[];

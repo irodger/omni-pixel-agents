@@ -10,15 +10,21 @@ This document separates delivered increments from future work. The product overv
 
 Screenshots use labelled demo events/tasks, not live model runs: [Ambient](../images/ambient.png), [Kanban](../images/kanban.png).
 
+## Delivered: project layout persistence (2026-10-26)
+
+Each project can pin a copy of the shared office, import an exported layout, or reset to the shared fallback. Overrides persist in the adapter state under canonical project paths, including separate revisions after resets. Saves reject stale revisions; resetting one project never writes the shared layout or another project's override. Campus and Ambient use the same override. Each scene retains its own engine and seat assignments.
+
+The existing main-office editor is the design workshop: arrange furniture there, then copy the result into a project or export/import it. Direct editing within a project canvas remains a follow-up; it is not part of this increment.
+
 ## Next increments
 
-| Increment              | Intended result                                             | Required acceptance before calling it done                                                                                                                       |
-| ---------------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Project decoration     | Independent persistent layouts and decor                    | Stable project IDs; shared-layout migration fallback; edits and seats isolated across projects; restoring one room cannot overwrite another                      |
-| Isolated parallel work | One Git worktree/branch per explicitly launched task        | Verify repository/cwd; retain dirty work; human reviews diff and chooses merge; conflicts remain visible; no automatic commit/push/merge or destructive cleanup  |
-| Rest room              | A visual place for agents explicitly reporting a rate limit | Structured provider signal and provenance; reset time only when known; unknown deadlines have no fabricated countdown; retry/resume stays human initiated        |
-| More agents            | Verified Copilot, Kilo, Gemini, Qwen and Pi contracts       | Official invocation/schema, captured fixtures and capability matrix; ACP only if actually supported; missing functionality stays unavailable rather than guessed |
-| Portable history       | Independent producers/visualizers agree on OPA              | Versioned conformance fixtures, replay/idempotency checks and public RFC; no claim of an industry standard before independent implementations exist              |
+| Increment              | Intended result                                                | Required acceptance before calling it done                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Direct project editor  | Edit furniture in a project without the shared design workshop | Reuse editor controls with isolated undo/save state; preserve revision conflict protection                                                                       |
+| Isolated parallel work | One Git worktree/branch per explicitly launched task           | Verify repository/cwd; retain dirty work; human reviews diff and chooses merge; conflicts remain visible; no automatic commit/push/merge or destructive cleanup  |
+| Rest room              | A visual place for agents explicitly reporting a rate limit    | Structured provider signal and provenance; reset time only when known; unknown deadlines have no fabricated countdown; retry/resume stays human initiated        |
+| More agents            | Verified Copilot, Kilo, Gemini, Qwen and Pi contracts          | Official invocation/schema, captured fixtures and capability matrix; ACP only if actually supported; missing functionality stays unavailable rather than guessed |
+| Portable history       | Independent producers/visualizers agree on OPA                 | Versioned conformance fixtures, replay/idempotency checks and public RFC; no claim of an industry standard before independent implementations exist              |
 
 The adapter boundary separates observations from commands. Replaying events, reading a result, moving a card or rendering an animation cannot grant permission or launch work. An unsupported transport fails visibly. Switching to another executor is a human decision, never a hidden second paid attempt.
 

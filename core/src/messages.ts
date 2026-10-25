@@ -91,6 +91,8 @@ export interface OpaProjectSnapshot {
   id: string;
   name: string;
   path: string;
+  layout?: Record<string, any>;
+  layoutVersion?: number;
   agents: OpaAgentSnapshot[];
   additionalProperties?: Record<string, any>;
 }
@@ -562,6 +564,10 @@ export interface SeatAssignment {
 
 export interface SaveLayout {
   type: 'saveLayout';
+  projectPath?: string;
+  expectedRevision?: number;
+  requestId?: string;
+  reset?: boolean;
   layout: Record<string, any>;
 }
 

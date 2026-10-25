@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
-import type { OpaAgentSnapshot, OpaProjectSnapshot } from '../../../core/src/messages.js';
+import type {
+  OpaAgentSnapshot,
+  OpaProjectSnapshot,
+  SaveLayout,
+} from '../../../core/src/messages.js';
 import type { OpaTask, OpaTaskCommand, OpaUsage } from '../../../core/src/opa/work.js';
 import { transport } from '../transport/index.js';
 import { markSeen, MAX_SEEN_EVENTS } from './attention.js';
@@ -64,7 +68,9 @@ export function useCampus() {
       requests.clear();
     };
   }, []);
-  const saveTask = (command: Omit<OpaTaskCommand, 'requestId'>) =>
+  const saveCommand = (
+    command: Omit<OpaTaskCommand, 'requestId'> | Omit<SaveLayout, 'requestId'>,
+  ) =>
     new Promise<void>((resolve, reject) => {
       if (transport.state !== 'connected') {
         reject(new Error('REQUEST_TIMEOUT'));
@@ -76,7 +82,7 @@ export function useCampus() {
         reject(new Error('REQUEST_TIMEOUT'));
       }, 10000);
       pending.current.set(requestId, { resolve, reject, timer });
-      transport.send({ type: 'opaTaskCommand', requestId, ...command });
+      transport.send({ type: 'opaTaskCommand', ...command, requestId });
     });
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -92,5 +98,18 @@ export function useCampus() {
       }
       return next;
     });
-  return { projects, seen, now, acknowledge, connection, tasks, usage, executors, saveTask };
+  const saveTask = (command: Omit<OpaTaskCommand, 'requestId'>) => saveCommand(command);
+  const saveLayout = (command: Omit<SaveLayout, 'requestId'>) => saveCommand(command);
+  return {
+    saveLayout,
+    projects,
+    seen,
+    now,
+    acknowledge,
+    connection,
+    tasks,
+    usage,
+    executors,
+    saveTask,
+  };
 }

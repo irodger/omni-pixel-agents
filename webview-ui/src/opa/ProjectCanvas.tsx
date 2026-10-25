@@ -17,13 +17,20 @@ export function ProjectCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const world = useRef<ProjectOffice | null>(null);
-  if (!world.current) world.current = new ProjectOffice(layout);
+  const effective = project.layout ? (project.layout as unknown as OfficeLayout) : layout;
+  if (!world.current) world.current = new ProjectOffice(effective);
+  const layoutKey = JSON.stringify(effective);
+  const appliedLayout = useRef(layoutKey);
   useEffect(() => {
+    if (appliedLayout.current !== layoutKey) {
+      world.current = new ProjectOffice(JSON.parse(layoutKey) as OfficeLayout);
+      appliedLayout.current = layoutKey;
+    }
     world.current!.sync(project);
-  }, [project]);
+  }, [project, layoutKey]);
   useEffect(() => {
     const canvas = canvasRef.current!;
-    const office = world.current!.office;
+
     const resize = new ResizeObserver(() => {
       const bounds = canvas.getBoundingClientRect();
       canvas.width = Math.max(1, Math.round(bounds.width * devicePixelRatio));
@@ -31,8 +38,9 @@ export function ProjectCanvas({
     });
     resize.observe(canvas);
     const stop = startGameLoop(canvas, {
-      update: (dt) => office.update(dt),
+      update: (dt) => world.current!.office.update(dt),
       render: (ctx) => {
+        const office = world.current!.office;
         const map = office.getLayout();
         const { zoom, panX, panY } = projectViewport(map, canvas.width, canvas.height);
         renderFrame(

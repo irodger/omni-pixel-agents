@@ -104,3 +104,7 @@ The [adapter layer](ADAPTERS.md) adds native/ACP discovery and explicit commands
 ## Passive task movement
 
 `POST /api/opa/tasks` and `opaTaskCommand` accept `action: "move"` with requestId, projectPath, taskId, expectedRevision and status. Unlike a new executor assignment, this command never launches or cancels a process. Launch/assignee/title/permission fields are rejected. Running tasks reject moves with `TASK_MOVE_RUNNING`; use explicit cancellation instead. The usual revision conflict protection applies. This is a host command, not a new journal event.
+
+### Project office overrides
+
+`saveLayout` retains its shared-office behavior without `projectPath`. With a project path it requires `expectedRevision`, accepts `requestId` and optional `reset`, and responds with `opaTaskResult` for acknowledgement/errors. `layout` remains required (use `{}` for reset). A campus project optionally carries `layout` and `layoutVersion`; absent layout means shared fallback. Reset increments the revision to prevent stale editors from resurrecting an old override. Project saves use strict adapter persistence and do not write `layout.json`.

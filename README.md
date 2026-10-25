@@ -1,5 +1,7 @@
 # Omni Pixel Agents
 
+Project offices can keep independent persistent layouts: copy the shared office, import a layout, or reset only that project. Furniture is designed in the existing main-office editor.
+
 [English](README.md) · [Русский](docs/readme/README.ru.md) · [Deutsch](docs/readme/README.de.md) · [Español](docs/readme/README.es.md)
 
 **Your coding agents, in one living pixel office.**

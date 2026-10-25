@@ -10,6 +10,7 @@ import type { OfficeLayout } from '../office/types.js';
 import { AmbientOffice } from './AmbientOffice.js';
 import { ATTENTION_DELAY_MS, attentionRows, needsAttention, waitingLabel } from './attention.js';
 import { ProjectCanvas } from './ProjectCanvas.js';
+import { ProjectDecor } from './ProjectDecor.js';
 import type { useCampus } from './useCampus.js';
 import { WorkPanel } from './WorkPanel.js';
 
@@ -165,6 +166,12 @@ export function CampusPanel({
                         </span>
                       </header>
                       <ProjectCanvas project={project} layout={layout} />
+                      <ProjectDecor
+                        project={project}
+                        shared={layout}
+                        campus={campus}
+                        readOnly={readOnly}
+                      />
                       <div className="opa-agent-list">
                         {!project.agents.length && (
                           <p className="opa-muted">

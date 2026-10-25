@@ -1,5 +1,7 @@
 # Omni Pixel Agents
 
+Projekte können eigene Grundrisse speichern: gemeinsames Büro kopieren, Layout importieren oder nur dieses Projekt zurücksetzen. Möbel werden im bestehenden Haupteditor gestaltet.
+
 [English](../../README.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [Español](README.es.md)
 
 **Deine Coding-Agenten in einem lebendigen Pixelbüro.**

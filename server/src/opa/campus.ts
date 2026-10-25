@@ -66,6 +66,14 @@ export function opaCampusSnapshot(store: AgentStateStore): OpaCampusState {
       tools: [...agent.activeToolStatuses.values()],
     });
   }
+  const layouts = store.getAdapter()?.loadProjectLayouts?.() ?? {};
+  for (const project of projects.values()) {
+    const saved = layouts[project.id];
+    if (saved) {
+      if (saved.layout) project.layout = saved.layout;
+      project.layoutVersion = saved.revision;
+    }
+  }
   return {
     type: 'opaCampusState',
     projects: [...projects.values()].sort((a, b) => a.path.localeCompare(b.path)),

@@ -33,6 +33,49 @@ describe('FileStateAdapter', () => {
     fs.rmSync(tempHome, { recursive: true, force: true });
   });
 
+  it('isolates project layouts, survives restart and rejects stale edits after reset', async () => {
+    const { registerOpaProject } = await import('../src/opa/campus.js');
+    const { saveProjectLayout } = await import('../src/opa/projectLayouts.js');
+    const adapter = new FileStateAdapter({ namespace: 'standalone' });
+    const store = new AgentStateStore();
+    store.setAdapter(adapter);
+    const a = path.join(tempHome, 'a', 'same');
+    const b = path.join(tempHome, 'b', 'same');
+    registerOpaProject(store, a);
+    registerOpaProject(store, b);
+    const layout = { version: 1, cols: 1, rows: 1, tiles: [0], furniture: [] };
+    const save = (projectPath: string, expectedRevision: number, reset = false) =>
+      saveProjectLayout(store, {
+        type: 'saveLayout',
+        projectPath,
+        expectedRevision,
+        layout,
+        reset,
+      });
+    save(a, 0);
+    save(b, 0);
+    save(a, 1, true);
+    expect(() => save(a, 1)).toThrow('LAYOUT_CONFLICT');
+    adapter.saveSeats({ '1': { palette: 2 } });
+    adapter.saveAgents([]);
+    const next = new AgentStateStore();
+    next.setAdapter(new FileStateAdapter({ namespace: 'standalone' }));
+    const projects = opaCampusSnapshot(next).projects;
+    expect(projects.find((p) => p.id === a)).toMatchObject({ layoutVersion: 2 });
+    expect(projects.find((p) => p.id === a)?.layout).toBeUndefined();
+    expect(projects.find((p) => p.id === b)?.layout).toEqual(layout);
+    expect(fs.existsSync(path.join(tempHome, '.pixel-agents', 'layout.json'))).toBe(false);
+    expect(() =>
+      saveProjectLayout(store, {
+        type: 'saveLayout',
+        projectPath: b,
+        expectedRevision: 1,
+        layout: {},
+      }),
+    ).toThrow('LAYOUT_INVALID');
+    expect(adapter.loadProjectLayouts()[b].revision).toBe(1);
+  });
+
   // ── Settings (shared config.json, per-namespace section) ────
 
   it('persists tasks and usage observations alongside seats and project paths', () => {

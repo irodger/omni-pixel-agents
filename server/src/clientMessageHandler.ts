@@ -23,6 +23,7 @@ import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
+import { saveProjectLayout } from './opa/projectLayouts.js';
 import { opaWorkSnapshot, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
@@ -132,8 +133,8 @@ export function handleClientMessage(
   // message type added later is privileged by default instead of open until
   // someone remembers to gate it.
   if (!ctx.privileged && msg.type !== 'webviewReady') {
-    if (msg.type === 'opaTaskCommand')
-      send({ type: 'opaTaskResult', requestId: msg.requestId, error: 'READ_ONLY' });
+    if (msg.type === 'opaTaskCommand' || (msg.type === 'saveLayout' && msg.requestId))
+      send({ type: 'opaTaskResult', requestId: msg.requestId!, error: 'READ_ONLY' });
     refuseReadOnly(msg, send, ctx);
     return;
   }
@@ -200,6 +201,23 @@ export function handleClientMessage(
       break;
 
     case 'saveLayout':
+      if (msg.projectPath !== undefined) {
+        try {
+          saveProjectLayout(
+            store,
+            msg as unknown as import('../../core/src/messages.js').SaveLayout,
+          );
+          if (msg.requestId) send({ type: 'opaTaskResult', requestId: msg.requestId });
+        } catch (error) {
+          if (msg.requestId)
+            send({
+              type: 'opaTaskResult',
+              requestId: msg.requestId,
+              error: error instanceof Error ? error.message : 'LAYOUT_INVALID',
+            });
+        }
+        break;
+      }
       if (msg.layout) {
         writeLayoutToFile(msg.layout as Record<string, unknown>);
       }

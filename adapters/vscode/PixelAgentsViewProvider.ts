@@ -49,6 +49,7 @@ import {
 } from '../../server/src/layoutPersistence.js';
 import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
+import { saveProjectLayout } from '../../server/src/opa/projectLayouts.js';
 import { opaWorkSnapshot, WorkError } from '../../server/src/opa/work.js';
 import { PathSet } from '../../server/src/pathKey.js';
 import type { ConsentEffects } from '../../server/src/providers/hook/consentExecutor.js';
@@ -537,6 +538,19 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         // Store seat assignments in a separate key (never touched by persistAgents)
         console.log(`[Pixel Agents] State: saveAgentSeats:`, JSON.stringify(message.seats));
         this.adapter.saveSeats(message.seats);
+      } else if (message.type === 'saveLayout' && message.projectPath !== undefined) {
+        try {
+          saveProjectLayout(this.store, message);
+          if (message.requestId)
+            this.webview?.postMessage({ type: 'opaTaskResult', requestId: message.requestId });
+        } catch (error) {
+          if (message.requestId)
+            this.webview?.postMessage({
+              type: 'opaTaskResult',
+              requestId: message.requestId,
+              error: error instanceof Error ? error.message : 'LAYOUT_INVALID',
+            });
+        }
       } else if (message.type === 'saveLayout') {
         this.layoutWatcher?.markOwnWrite();
         writeLayoutToFile(message.layout as Record<string, unknown>);

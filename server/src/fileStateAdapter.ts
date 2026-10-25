@@ -17,7 +17,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
-import type { StateAdapter } from '../../core/src/adapter.js';
+import type { ProjectLayouts, StateAdapter } from '../../core/src/adapter.js';
 import type { OpaWorkData } from '../../core/src/opa/work.js';
 import { isTask, isUsage } from '../../core/src/opa/work.js';
 import type { PersistedAgent } from '../../core/src/schemas.js';
@@ -34,6 +34,7 @@ function settingNameOf(key: string): AdapterSettingKey | null {
 }
 
 interface AdapterState {
+  projectLayouts?: ProjectLayouts;
   opaWork?: OpaWorkData;
   opaProjects?: string[];
   agents: PersistedAgent[];
@@ -101,6 +102,15 @@ export class FileStateAdapter implements StateAdapter {
 
   // ── Internal state-file I/O ─────────────────────────────────
 
+  loadProjectLayouts(): ProjectLayouts {
+    return this.readState().projectLayouts ?? {};
+  }
+  saveProjectLayouts(data: ProjectLayouts): void {
+    const state = this.readState();
+    state.projectLayouts = data;
+    this.writeState(state, true);
+  }
+
   loadOpaProjects(): string[] {
     return this.readState().opaProjects ?? [];
   }
@@ -127,6 +137,7 @@ export class FileStateAdapter implements StateAdapter {
       const raw = fs.readFileSync(this.stateFilePath, 'utf-8');
       const parsed = JSON.parse(raw) as Partial<AdapterState>;
       return {
+        projectLayouts: parsed.projectLayouts,
         opaWork: parsed.opaWork
           ? {
               tasks: Array.isArray(parsed.opaWork.tasks) ? parsed.opaWork.tasks.filter(isTask) : [],

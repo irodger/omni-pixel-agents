@@ -614,3 +614,21 @@
     grid-template-columns: repeat(4, minmax(230px, 80vw));
   }
 }
+
+.opa-project-decor {
+  padding: 12px 16px;
+  border-top: 1px solid #ffffff12;
+}
+.opa-project-decor > div {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.opa-project-decor label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+.opa-project-decor input {
+  max-width: 100%;
+}

@@ -1031,13 +1031,17 @@ components:
             $ref: '#/components/schemas/SeatAssignment'
 
     SaveLayout:
-      description: Save the office layout to ~/.pixel-agents/layout.json.
+      description: Save shared layout, or a revision-checked project override.
       type: object
       additionalProperties: false
       required: [type, layout]
       properties:
         type:
           const: saveLayout
+        projectPath: { type: string }
+        expectedRevision: { type: integer, minimum: 0 }
+        requestId: { type: string }
+        reset: { type: boolean }
         layout:
           type: object
           description: Opaque layout object; format owned by the rendering layer.
@@ -1489,6 +1493,8 @@ components:
         id: { type: string }
         name: { type: string }
         path: { type: string }
+        layout: { type: object }
+        layoutVersion: { type: integer }
         agents:
           type: array
           items:
