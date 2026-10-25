@@ -1,4 +1,19 @@
 export const ru: Record<string, string> = {
+  blocked: 'Ожидает разрешения',
+  error: 'Ошибка',
+  done: 'Готово',
+
+  'Attention Inbox': 'Входящие · внимание',
+  'Blocks first, then errors and unread results. Reading never approves or starts work.':
+    'Сначала блокировки, затем ошибки и непрочитанные результаты. Чтение ничего не разрешает и не запускает.',
+  'Offline: showing the last received state. Actions requiring the host remain unavailable.':
+    'Нет связи: показано последнее полученное состояние. Действия на сервере недоступны.',
+  'Review block': 'Посмотреть блокировку',
+  'Open result': 'Открыть результат',
+  'Mark read': 'Отметить прочитанным',
+  'Review the current task permission controls or respond in the source agent. Opening this item grants nothing.':
+    'Проверьте актуальный запрос разрешения в задаче или ответьте в исходном агенте. Открытие ничего не разрешает.',
+
   'Summary copied.': 'Итог скопирован.',
   'Task summary': 'Итог задачи',
   Unknown: 'Неизвестно',

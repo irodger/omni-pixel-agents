@@ -16,6 +16,7 @@ export interface OpaTask {
     sourceAgentId?: string;
     usage?: OpaUsage[];
     outputTruncated?: boolean;
+    resultEventId?: string;
     state: string;
     journal: string;
     startedAt: number;

@@ -143,6 +143,7 @@ function start(
   let lastEvent: OpaEvent | undefined;
   let source: { provider?: string; sessionId?: string; sourceAgentId?: string } = {};
   let outputTruncated = false;
+  let resultEventId: string | undefined;
   let usageOverflow = false;
   const usage = new Map<string, import('../../../core/src/opa/work.js').OpaUsage>();
   const record = (event: OpaEvent) => {
@@ -164,6 +165,7 @@ function start(
       } else if (!previous || Date.parse(event.usage.timestamp) >= Date.parse(previous.timestamp))
         usage.set(id, event.usage);
     }
+    if (event.type === 'turn.failed' || event.type === 'turn.completed') resultEventId = event.id;
     if (event.type === 'turn.failed') failed = true;
     if (event.type === 'turn.completed') completed = true;
     if (event.type === 'message' && event.role === 'assistant') {
@@ -320,8 +322,7 @@ function start(
           timestamp: new Date().toISOString(),
           message: cancelled ? 'Task cancelled' : error || 'Agent did not complete the task',
         };
-        appendFileSync(journal, JSON.stringify(event) + '\n');
-        office.accept(event);
+        record(event);
       }
       updateTaskExecution(
         store,
@@ -332,6 +333,7 @@ function start(
           ...source,
           usage: usageOverflow ? undefined : [...usage.values()],
           outputTruncated,
+          resultEventId,
           journal,
           startedAt,
           state: cancelled
