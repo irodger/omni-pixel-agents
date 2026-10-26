@@ -2,16 +2,43 @@ import type { OpaProjectSnapshot } from '../../../core/src/messages.js';
 import type { OpaTask } from '../../../core/src/opa/work.js';
 
 export type CampusRoute = {
-  view: 'overview' | 'tasks' | 'usage' | 'attention';
+  view: 'overview' | 'tasks' | 'usage' | 'attention' | 'timeline';
   project?: string;
   task?: string;
   run?: string;
   provider?: string;
   session?: string;
   agent?: string;
+  eventType?: string;
+  event?: string;
 };
+export const EVENT_TYPES = [
+  'session.started',
+  'session.ended',
+  'turn.started',
+  'turn.completed',
+  'turn.failed',
+  'tool.started',
+  'tool.completed',
+  'permission.requested',
+  'permission.resolved',
+  'message',
+  'usage.reported',
+  'task.upserted',
+];
 export const ROOT_ROUTE: CampusRoute = { view: 'overview' };
-const fields = ['v', 'view', 'project', 'task', 'provider', 'session', 'agent', 'run'];
+const fields = [
+  'v',
+  'view',
+  'project',
+  'task',
+  'provider',
+  'session',
+  'agent',
+  'run',
+  'eventType',
+  'event',
+];
 const valid = (value: string) =>
   value.length > 0 &&
   value.length <= 8192 &&
@@ -43,10 +70,33 @@ export function parseRoute(hash: string): CampusRoute | null {
   if ([...params.values()].some((value) => !valid(value))) return null;
   if (
     params.get('v') !== '1' ||
-    !['overview', 'tasks', 'usage', 'attention'].includes(params.get('view') ?? '')
+    !['overview', 'tasks', 'usage', 'attention', 'timeline'].includes(params.get('view') ?? '')
   )
     return null;
   const route = Object.fromEntries([...params].filter(([key]) => key !== 'v')) as CampusRoute;
+  if (route.view === 'timeline') {
+    if (
+      (route.task ||
+        route.run ||
+        route.provider ||
+        route.session ||
+        route.eventType ||
+        route.event) &&
+      !route.project
+    )
+      return null;
+    if (route.agent) return null;
+    if (route.eventType && !EVENT_TYPES.includes(route.eventType)) return null;
+    if (
+      route.event &&
+      (!/^[1-9]\d*$/.test(route.event) ||
+        !Number.isSafeInteger(Number(route.event)) ||
+        Number(route.event) >= Number.MAX_SAFE_INTEGER)
+    )
+      return null;
+    return route;
+  }
+  if (route.eventType || route.event) return null;
   if (route.run && !route.task) return null;
   if ((route.task || route.session || route.provider || route.agent) && !route.project) return null;
   if (route.task && (route.view !== 'tasks' || route.session || route.provider || route.agent))
@@ -73,6 +123,8 @@ export function resolveRoute(
   projects: OpaProjectSnapshot[],
   tasks: OpaTask[],
 ): boolean {
+  // Persisted history remains addressable after live sessions/tasks disappear.
+  if (route.view === 'timeline') return true;
   if (!route.project) return true;
   const project = projects.find((p) => p.id === route.project);
   if (!project) return false;

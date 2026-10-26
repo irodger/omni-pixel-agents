@@ -10,12 +10,13 @@ import type { OfficeLayout } from '../office/types.js';
 import { AmbientOffice } from './AmbientOffice.js';
 import { ATTENTION_DELAY_MS, needsAttention, waitingLabel } from './attention.js';
 import { AttentionPanel } from './AttentionPanel.js';
-import { resolveRoute, ROOT_ROUTE } from './deepLinks.js';
+import { type CampusRoute, resolveRoute, ROOT_ROUTE } from './deepLinks.js';
 import { inboxItems } from './inbox.js';
 import { LinkControls } from './LinkControls.js';
 import { ProjectCanvas } from './ProjectCanvas.js';
 import { ProjectDecor } from './ProjectDecor.js';
 import { ProjectIdeLink } from './ProjectIdeLink.js';
+import { TimelinePanel } from './TimelinePanel.js';
 import type { useCampus } from './useCampus.js';
 import { useCampusRoute } from './useCampusRoute.js';
 import { WorkPanel } from './WorkPanel.js';
@@ -51,8 +52,7 @@ export function CampusPanel({
   const exitAmbient = useCallback(() => setAmbientId(null), []);
   const [agentId, setAgentId] = useState<number | null>(null);
   const view = current.view;
-  const setView = (view: 'overview' | 'tasks' | 'usage' | 'attention') =>
-    navigate({ view, project: current.project });
+  const setView = (view: CampusRoute['view']) => navigate({ view, project: current.project });
   const inbox = inboxItems(projects, campus.tasks, seen);
   const agents = projects.flatMap((p) => p.agents);
   const selected = current.session
@@ -145,7 +145,7 @@ export function CampusPanel({
           </span>
         </div>
         <nav className="opa-view-tabs" aria-label={t('View')}>
-          {(['overview', 'tasks', 'usage', 'attention'] as const).map((item) => (
+          {(['overview', 'tasks', 'usage', 'attention', 'timeline'] as const).map((item) => (
             <button
               key={item}
               className="opa-button"
@@ -159,7 +159,9 @@ export function CampusPanel({
                     ? 'Tasks'
                     : item === 'attention'
                       ? 'Attention Inbox'
-                      : 'Usage & costs',
+                      : item === 'timeline'
+                        ? 'Timeline'
+                        : 'Usage & costs',
               )}
             </button>
           ))}
@@ -176,6 +178,9 @@ export function CampusPanel({
                   aria-label={t('Show project')}
                 >
                   <option value="">{t('All offices')}</option>
+                  {projectId && !projects.some((p) => p.id === projectId) && (
+                    <option value={projectId}>{projectId}</option>
+                  )}
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} — {p.path}
@@ -184,7 +189,14 @@ export function CampusPanel({
                 </select>
               </label>
             </div>
-            {view === 'attention' ? (
+            {view === 'timeline' ? (
+              <TimelinePanel
+                key={JSON.stringify(current)}
+                campus={campus}
+                route={current}
+                navigate={navigate}
+              />
+            ) : view === 'attention' ? (
               <AttentionPanel campus={campus} projectId={projectId} navigate={navigate} />
             ) : view !== 'overview' ? (
               <WorkPanel

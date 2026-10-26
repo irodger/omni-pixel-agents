@@ -1,4 +1,52 @@
 export const ru: Record<string, string> = {
+  'Inspect event': 'Просмотр события',
+  Timeline: 'Лента событий',
+  'Recorded observations, newest first. Source clocks may differ; order does not imply causality.':
+    'Сохранённые наблюдения, сначала новые. Часы источников могут различаться; порядок не означает причинную связь.',
+  'Choose one project to load its saved activity.':
+    'Выберите проект для просмотра сохранённых событий.',
+  'Task ID': 'ID задачи',
+  'Session ID': 'ID сессии',
+  'Event type': 'Тип события',
+  'All event types': 'Все типы событий',
+  'Apply filters': 'Применить фильтры',
+  'Clear filters': 'Сбросить фильтры',
+  'Refresh timeline': 'Обновить ленту',
+  'Return to newest events': 'К новым событиям',
+  'Offline. Loaded events remain available; reconnect to refresh.':
+    'Нет подключения. Загруженные события доступны; для обновления подключитесь снова.',
+  'Host retention removed observations through #{ordinal}. Missing events are not reconstructed.':
+    'Хранилище удалило наблюдения до №{ordinal} включительно. Пропущенные события не восстанавливаются.',
+  'The linked event is unavailable or excluded by these filters.':
+    'Событие по ссылке недоступно или исключено фильтрами.',
+  'No recorded events match these filters.': 'По этим фильтрам нет сохранённых событий.',
+  'Fixture / test data': 'Тестовые данные',
+  'Task journal': 'Журнал задачи',
+  'Ingested observation': 'Полученное наблюдение',
+  'Source time': 'Время источника',
+  'Observed time': 'Время наблюдения',
+  'Source context': 'Контекст источника',
+  Sequence: 'Порядок в потоке',
+  'Task / run association': 'Задача / попытка',
+  'Stored excerpt is truncated.': 'Сохранённый фрагмент сокращён.',
+  'Open task / attempt': 'Открыть задачу / попытку',
+  'Open session context': 'Открыть контекст сессии',
+  'Filter this session': 'События этой сессии',
+  'Stored event details': 'Сохранённые данные события',
+  'Load older events': 'Загрузить более ранние события',
+  'Loading events…': 'Загрузка событий…',
+  'View recorded activity': 'Просмотр записанных событий',
+  'Older events were removed by retention. Refresh the timeline.':
+    'Ранние события удалены по лимиту хранения. Обновите ленту.',
+  'This host cannot read the saved event history version.':
+    'Сервер не поддерживает сохранённую версию истории событий.',
+  'Event history could not be read. Stored data has been kept.':
+    'Не удалось прочитать историю событий. Сохранённые данные не изменены.',
+  'This timeline link or cursor is unavailable on this host.':
+    'Ссылка на ленту или её страницу недоступна на этом сервере.',
+  'Event history is unavailable. Check the connection and host storage.':
+    'История событий недоступна. Проверьте соединение и хранилище сервера.',
+
   'Unknown attempt title': 'Название при запуске неизвестно',
   'This saved attempt is unavailable on this host.':
     'Сохранённая попытка недоступна на этом сервере.',

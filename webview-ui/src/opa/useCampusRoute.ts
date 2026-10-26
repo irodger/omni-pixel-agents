@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 
 import { type CampusRoute, parseRoute, routeHash } from './deepLinks.js';
 
@@ -11,5 +11,6 @@ export function useCampusRoute() {
   const navigate = (route: CampusRoute) => {
     window.location.hash = routeHash(route);
   };
-  return { route: parseRoute(hash), navigate };
+  const route = useMemo(() => parseRoute(hash), [hash]);
+  return { route, navigate };
 }

@@ -99,6 +99,15 @@ export function TaskHistory({
   const chosen = selected?.execution.runId === selectedRunId ? selected : undefined;
   return (
     <div className="opa-run-history">
+      <button
+        type="button"
+        className="opa-button"
+        onClick={() =>
+          navigate({ view: 'timeline', project: projectPath, task: id, run: selectedRunId })
+        }
+      >
+        {t('View recorded activity')}
+      </button>
       {selectedRunId ? (
         <>
           <p className="opa-notice">
