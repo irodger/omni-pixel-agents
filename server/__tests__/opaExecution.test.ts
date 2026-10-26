@@ -52,6 +52,19 @@ function setup(script: string, id = 'codex') {
     },
   };
 }
+// Existing process fixtures now use the explicit two-step launch contract.
+function dispatch(store: AgentStateStore, command: Record<string, unknown>) {
+  if (command.action !== 'create') return executeTaskCommand(store, command);
+  const task = executeTaskCommand(store, command);
+  if (task.execution) return task;
+  return executeTaskCommand(store, {
+    action: 'start',
+    requestId: `start-${command.requestId}`,
+    projectPath: task.projectPath,
+    taskId: task.id,
+    expectedRevision: task.revision,
+  });
+}
 const success = `process.stdin.resume(); process.stdin.on('end',()=>{for(const e of [{type:'thread.started',thread_id:'test'},{type:'turn.started'},{type:'item.completed',item:{id:'answer',type:'agent_message',text:'Done from fixture'}},{type:'turn.completed',usage:{input_tokens:10,output_tokens:2}}])console.log(JSON.stringify(e))});`;
 async function finished(store: AgentStateStore) {
   await vi.waitFor(() =>
@@ -62,13 +75,11 @@ async function finished(store: AgentStateStore) {
 describe('task dispatch', () => {
   it('launches once, passes prompt without shell expansion, collects result and usage', async () => {
     const { store, project, command } = setup(success);
-    const running = executeTaskCommand(store, command);
+    const running = dispatch(store, command);
     expect(running.status).toBe('in_progress');
     expect(running.execution?.state).toBe('running');
-    executeTaskCommand(store, command);
-    expect(() => executeTaskCommand(store, { ...command, requestId: 'two' })).toThrow(
-      'PROJECT_BUSY',
-    );
+    dispatch(store, command);
+    expect(() => dispatch(store, { ...command, requestId: 'two' })).toThrow('PROJECT_BUSY');
     const done = await finished(store);
     expect(done.status).toBe('done');
     expect(done.execution?.output).toContain('Done from fixture');
@@ -91,25 +102,24 @@ describe('task dispatch', () => {
   });
   it('labels bounded result output instead of implying completeness', async () => {
     const { store, command } = setup(success.replace('Done from fixture', 'x'.repeat(8100)));
-    executeTaskCommand(store, command);
+    dispatch(store, command);
     const done = await finished(store);
     expect(done.execution?.output).toHaveLength(8000);
     expect(done.execution?.outputTruncated).toBe(true);
   });
   it('preserves launch failures and permits explicit retry', async () => {
     const { store, command } = setup("process.stderr.write('fixture failure'); process.exit(2)");
-    executeTaskCommand(store, command);
+    dispatch(store, command);
     const failed = await finished(store);
     expect(failed.status).toBe('open');
     expect(failed.execution?.state).toBe('failed');
     expect(failed.execution?.error).toContain('fixture failure');
     const retry = executeTaskCommand(store, {
-      action: 'update',
+      action: 'start',
       requestId: 'retry',
       taskId: failed.id,
       projectPath: failed.projectPath,
       expectedRevision: failed.revision,
-      launch: true,
     });
     expect(retry.execution?.runId).not.toBe(failed.execution?.runId);
     await finished(store);
@@ -129,7 +139,7 @@ describe('task dispatch', () => {
   });
   it('cancels a running process and blocks conflicting edits', async () => {
     const { store, command } = setup('setInterval(()=>{},1000)');
-    const task = executeTaskCommand(store, command);
+    const task = dispatch(store, command);
     const update = {
       action: 'update',
       requestId: 'stop',
@@ -143,15 +153,35 @@ describe('task dispatch', () => {
     expect(stopped.execution?.state).toBe('cancelled');
     expect(stopped.status).toBe('cancelled');
   });
-  it('rejects unavailable executor or missing project before saving', () => {
+  it('saves unavailable assignments passively and rejects explicit start before spawning', () => {
     const { store, command } = setup(success);
-    expect(() => executeTaskCommand(store, { ...command, assignee: 'shell' })).toThrow(
-      'EXECUTOR_UNAVAILABLE',
-    );
+    const unavailable = executeTaskCommand(store, { ...command, assignee: 'shell' });
+    expect(unavailable.execution).toBeUndefined();
     expect(() =>
-      executeTaskCommand(store, { ...command, projectPath: '/missing/opa-project' }),
+      executeTaskCommand(store, {
+        action: 'start',
+        requestId: 'bad-start',
+        taskId: unavailable.id,
+        projectPath: unavailable.projectPath,
+        expectedRevision: unavailable.revision,
+      }),
+    ).toThrow('EXECUTOR_UNAVAILABLE');
+    const missing = executeTaskCommand(store, {
+      ...command,
+      requestId: 'missing',
+      projectPath: '/missing/opa-project',
+    });
+    expect(() =>
+      executeTaskCommand(store, {
+        action: 'start',
+        requestId: 'missing-start',
+        taskId: missing.id,
+        projectPath: missing.projectPath,
+        expectedRevision: missing.revision,
+      }),
     ).toThrow('PROJECT_UNAVAILABLE');
-    expect(opaWorkSnapshot(store).tasks).toHaveLength(0);
+    expect(opaWorkSnapshot(store).tasks).toHaveLength(2);
+    expect(opaWorkSnapshot(store).tasks.every((task) => !task.execution)).toBe(true);
   });
   it('adapts OpenCode run events independently of the plugin contract', async () => {
     const events = [
@@ -173,7 +203,7 @@ describe('task dispatch', () => {
       `for(const e of ${JSON.stringify(events)})console.log(JSON.stringify(e));`,
       'opencode',
     );
-    executeTaskCommand(store, command);
+    dispatch(store, command);
     const done = await finished(store);
     expect(done.status).toBe('done');
     expect(done.execution?.output).toContain('OpenCode result');
@@ -209,7 +239,7 @@ if(m.id==='ask' && m.result){send({method:'session/update',params:{sessionId:'ac
         agents: [{ id: 'fixture', name: 'ACP fixture', command: process.execPath, args: [file] }],
       }),
     );
-    executeTaskCommand(store, {
+    dispatch(store, {
       action: 'create',
       requestId: 'acp-task',
       title: 'Fixture work',
@@ -273,7 +303,7 @@ if(m.id==='ask' && m.result){send({method:'session/update',params:{sessionId:'ac
   });
   it('does not cancel a real process when a running card is moved to cancelled', async () => {
     const { store, command } = setup('setInterval(()=>{},1000)');
-    const task = executeTaskCommand(store, command);
+    const task = dispatch(store, command);
     expect(() =>
       executeTaskCommand(store, {
         action: 'move',

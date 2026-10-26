@@ -137,6 +137,7 @@ components:
     ClientMessage:
       oneOf:
         - $ref: '#/components/schemas/OpaTaskCommand'
+        - $ref: '#/components/schemas/OpaQueueCommand'
         - $ref: '#/components/schemas/OpaTaskRunsRequest'
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/WebviewReady'
@@ -1538,6 +1539,7 @@ components:
         tasks: { type: array, items: { $ref: '#/components/schemas/OpaTaskRecord' } }
         usage: { type: array, items: { $ref: '#/components/schemas/OpaUsageRecord' } }
         executors: { type: array, items: { $ref: '#/components/schemas/OpaExecutor' } }
+        queues: { type: array, items: { $ref: '#/components/schemas/OpaQueueState' } }
     OpaAdapterCapabilities:
       type: object
       required: [observe, prompt, cancel, permissions, loadSession]
@@ -1721,7 +1723,7 @@ components:
         optionId: { type: string }
     OpaTaskAction:
       type: string
-      enum: [create, update, permission, move]
+      enum: [create, update, permission, move, start]
     OpaTaskResult:
       type: object
       required: [type, requestId]
@@ -1730,3 +1732,27 @@ components:
         requestId: { type: string }
         taskId: { type: string }
         error: { type: string }
+
+    OpaQueueState:
+      type: object
+      required: [projectPath, revision, paused, taskIds]
+      properties:
+        projectPath: { type: string }
+        revision: { type: number }
+        paused: { type: boolean }
+        taskIds: { type: array, items: { type: string } }
+    OpaQueueCommand:
+      type: object
+      required: [type, requestId, projectPath, action, expectedRevision]
+      properties:
+        type: { type: string, const: opaQueueCommand }
+        requestId: { type: string }
+        projectPath: { type: string }
+        action: { $ref: '#/components/schemas/OpaQueueAction' }
+        expectedRevision: { type: number }
+        taskId: { type: string }
+        taskIds: { type: array, items: { type: string } }
+        expectedTaskRevision: { type: number }
+    OpaQueueAction:
+      type: string
+      enum: [enqueue, remove, reorder, pause, resume, start-next]

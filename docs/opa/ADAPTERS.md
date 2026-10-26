@@ -1,6 +1,6 @@
 # OPA adapters
 
-OPA is a visualization and local control client, not a scheduler. A transport must not choose the next task, approve a request, merge work or silently resume a paid run. Saving a new task assignment is still an explicit launch action; dragging or changing status alone is not.
+OPA is a visualization and local control client, not a scheduler. A transport must not choose the next task, approve a request, merge work or silently resume a paid run. Saving a task or assignment is passive. Only a separate explicit Start command can launch one task; queue pause/resume never dispatches. See [Task Queue and API migration](TASK_QUEUE.md).
 
 ## Implemented surfaces
 

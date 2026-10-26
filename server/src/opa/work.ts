@@ -5,6 +5,7 @@ import type { OpaEvent } from '../../../core/src/opa/events.js';
 import type {
   OpaTask,
   OpaTaskCommand,
+  OpaTaskQueue,
   OpaTaskRun,
   OpaUsage,
   OpaWorkData,
@@ -15,6 +16,7 @@ import type {
 import {
   isTask,
   isTaskExecution,
+  isTaskQueue,
   isTaskRun,
   isUsage,
   taskStatuses,
@@ -44,6 +46,15 @@ function state(store: AgentStateStore): OpaWorkData {
       throw new WorkError('HISTORY_UNSUPPORTED');
     if (raw?.runs !== undefined && (!Array.isArray(raw.runs) || !raw.runs.every(isTaskRun)))
       throw new WorkError('HISTORY_INVALID');
+    if (raw?.queueVersion !== undefined && raw.queueVersion !== 1)
+      throw new WorkError('QUEUE_VERSION_UNSUPPORTED');
+    if (
+      raw?.queues !== undefined &&
+      (!Array.isArray(raw.queues) ||
+        !raw.queues.every(isTaskQueue) ||
+        new Set(raw.queues.map((q) => q.projectPath)).size !== raw.queues.length)
+    )
+      throw new WorkError('QUEUE_HISTORY_INVALID');
     const runs: OpaTaskRun[] = (raw?.runs ?? []).map((run) => ({
       ...run,
       execution: historyExecution(
@@ -105,6 +116,10 @@ export function opaWorkSnapshot(store: AgentStateStore) {
         : task,
     ),
     usage: data.usage,
+    queues: (data.queues ?? []).map(({ receipts: _receipts, ...queue }) => {
+      void _receipts;
+      return queue;
+    }),
     executors: discoverAdapters()
       .adapters.filter((adapter) => adapter.status === 'available')
       .map(({ id, name, transport, capabilities }) => ({ id, name, transport, capabilities })),
@@ -367,4 +382,27 @@ export function taskRunsReply(store: AgentStateStore, raw: Record<string, unknow
       error: error instanceof WorkError ? error.message : 'RUNS_INVALID',
     };
   }
+}
+
+export function taskQueue(store: AgentStateStore, projectPath: string): OpaTaskQueue {
+  const path = toPathKey(projectPath);
+  return structuredClone(
+    state(store).queues?.find((q) => q.projectPath === path) ?? {
+      projectPath: path,
+      revision: 0,
+      paused: false,
+      taskIds: [],
+      receipts: [],
+    },
+  );
+}
+export function saveTaskQueue(store: AgentStateStore, queue: OpaTaskQueue): void {
+  if (!isTaskQueue(queue)) throw new WorkError('QUEUE_INVALID');
+  const data = state(store);
+  save(store, {
+    ...data,
+    queueVersion: 1,
+    queues: [...(data.queues ?? []).filter((q) => q.projectPath !== queue.projectPath), queue],
+  });
+  registerOpaProject(store, queue.projectPath);
 }

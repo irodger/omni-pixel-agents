@@ -51,6 +51,7 @@ import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
 import { historyReply } from '../../server/src/opa/history.js';
 import { saveProjectLayout } from '../../server/src/opa/projectLayouts.js';
+import { executeQueueCommand } from '../../server/src/opa/queue.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from '../../server/src/opa/work.js';
 import { PathSet } from '../../server/src/pathKey.js';
 import type { ConsentEffects } from '../../server/src/providers/hook/consentExecutor.js';
@@ -469,6 +470,17 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
         this.webview?.postMessage(historyReply(this.store, message));
       } else if (message.type === 'opaTaskRunsRequest') {
         this.webview?.postMessage(taskRunsReply(this.store, message));
+      } else if (message.type === 'opaQueueCommand') {
+        try {
+          executeQueueCommand(this.store, message);
+          this.webview?.postMessage({ type: 'opaTaskResult', requestId: message.requestId });
+        } catch (error) {
+          this.webview?.postMessage({
+            type: 'opaTaskResult',
+            requestId: message.requestId,
+            error: error instanceof WorkError ? error.message : 'QUEUE_INVALID',
+          });
+        }
       } else if (message.type === 'opaTaskCommand') {
         try {
           const task = executeTaskCommand(this.store, message);

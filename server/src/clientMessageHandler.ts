@@ -25,6 +25,7 @@ import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
 import { historyReply } from './opa/history.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
+import { executeQueueCommand } from './opa/queue.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
@@ -144,13 +145,29 @@ export function handleClientMessage(
   // message type added later is privileged by default instead of open until
   // someone remembers to gate it.
   if (!ctx.privileged && msg.type !== 'webviewReady') {
-    if (msg.type === 'opaTaskCommand' || (msg.type === 'saveLayout' && msg.requestId))
+    if (
+      msg.type === 'opaTaskCommand' ||
+      msg.type === 'opaQueueCommand' ||
+      (msg.type === 'saveLayout' && msg.requestId)
+    )
       send({ type: 'opaTaskResult', requestId: msg.requestId!, error: 'READ_ONLY' });
     refuseReadOnly(msg, send, ctx);
     return;
   }
 
   switch (msg.type) {
+    case 'opaQueueCommand':
+      try {
+        executeQueueCommand(store, msg);
+        send({ type: 'opaTaskResult', requestId: msg.requestId });
+      } catch (error) {
+        send({
+          type: 'opaTaskResult',
+          requestId: msg.requestId,
+          error: error instanceof WorkError ? error.message : 'QUEUE_INVALID',
+        });
+      }
+      break;
     case 'opaTaskCommand':
       try {
         const task = executeTaskCommand(store, msg);

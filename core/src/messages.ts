@@ -55,6 +55,7 @@ export type ServerMessage =
 
 export type ClientMessage =
   | OpaTaskCommand
+  | OpaQueueCommand
   | OpaTaskRunsRequest
   | OpaEventHistoryRequest
   | WebviewReady
@@ -126,6 +127,7 @@ export interface OpaWorkState {
   tasks: OpaTaskRecord[];
   usage: OpaUsageRecord[];
   executors?: OpaExecutor[];
+  queues?: OpaQueueState[];
   additionalProperties?: Record<string, any>;
 }
 
@@ -216,6 +218,14 @@ export interface OpaAdapterCapabilities {
   cancel: boolean;
   permissions: boolean;
   loadSession: boolean;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaQueueState {
+  projectPath: string;
+  revision: number;
+  paused: boolean;
+  taskIds: string[];
   additionalProperties?: Record<string, any>;
 }
 
@@ -588,7 +598,21 @@ export interface OpaTaskCommand {
   additionalProperties?: Record<string, any>;
 }
 
-export type OpaTaskAction = 'create' | 'update' | 'permission' | 'move';
+export type OpaTaskAction = 'create' | 'update' | 'permission' | 'move' | 'start';
+
+export interface OpaQueueCommand {
+  type: 'opaQueueCommand';
+  requestId: string;
+  projectPath: string;
+  action: OpaQueueAction;
+  expectedRevision: number;
+  taskId?: string;
+  taskIds?: string[];
+  expectedTaskRevision?: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaQueueAction = 'enqueue' | 'remove' | 'reorder' | 'pause' | 'resume' | 'start-next';
 
 export interface OpaTaskRunsRequest {
   type: 'opaTaskRunsRequest';

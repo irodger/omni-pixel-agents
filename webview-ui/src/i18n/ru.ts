@@ -1,4 +1,47 @@
 export const ru: Record<string, string> = {
+  'Task queue': 'Очередь задач',
+  'Saving, assigning and enqueueing never starts work. Start one task explicitly; the queue never drains automatically.':
+    'Сохранение, назначение исполнителя и добавление в очередь ничего не запускают. Запускайте каждую задачу явно; автоматического продолжения нет.',
+  'Choose one project to manage its queue.': 'Выберите проект для управления его очередью.',
+  'Queue paused': 'Очередь приостановлена',
+  'Queue ready': 'Очередь готова',
+  Revision: 'Ревизия',
+  'Resume queue': 'Возобновить очередь',
+  'Pause queue': 'Приостановить очередь',
+  'Next task': 'Следующая задача',
+  None: 'Нет',
+  'A task is running in this project. Starting another is unavailable.':
+    'В проекте уже выполняется задача. Запуск следующей недоступен.',
+  'The next task needs an available executor.': 'Для следующей задачи нужен доступный исполнитель.',
+  'Start {title} with {executor} in {project}? This may incur provider costs.':
+    'Запустить «{title}» через {executor} в {project}? Возможны расходы у провайдера.',
+  'Start next task': 'Запустить следующую',
+  'No queued tasks.': 'В очереди нет задач.',
+  'Unavailable task': 'Задача недоступна',
+  'Reopen this task before starting it.': 'Перед запуском верните задачу в открытые.',
+  'Move earlier': 'Переместить выше',
+  'Remove from queue': 'Убрать из очереди',
+  'Start task': 'Запустить задачу',
+  'Add to queue': 'В очередь',
+  Queued: 'В очереди',
+  'Saving an executor only prepares the task. Use Start task or Start next task to launch it.':
+    'Сохранение исполнителя только подготавливает задачу. Для запуска используйте «Запустить задачу» или «Запустить следующую».',
+  QUEUE_INVALID: 'Некорректная команда очереди.',
+  QUEUE_CONFLICT: 'Очередь изменилась. Проверьте актуальный порядок и повторите действие.',
+  QUEUE_CAPACITY: 'Достигнут лимит очереди (200 задач) или ревизий.',
+  QUEUE_PAUSED: 'Очередь приостановлена. Возобновите её перед явным запуском.',
+  QUEUE_EMPTY: 'Очередь пуста.',
+  QUEUE_ITEM_NOT_FOUND: 'Задача отсутствует в очереди.',
+  TASK_ALREADY_QUEUED: 'Задача уже в очереди.',
+  TASK_REOPEN_REQUIRED: 'Перед запуском верните задачу в открытые.',
+  TASK_QUEUED: 'Задача в очереди. Используйте «Запустить следующую» или уберите её из очереди.',
+  EXPLICIT_START_REQUIRED:
+    'Сохранение больше не запускает задачу. Используйте отдельную команду Start.',
+  QUEUE_START_ALREADY_RECORDED:
+    'Этот запрос запуска уже зарегистрирован. Проверьте историю попыток; повторного запуска не будет.',
+  QUEUE_VERSION_UNSUPPORTED: 'Версия сохранённой очереди не поддерживается.',
+  QUEUE_HISTORY_INVALID: 'Сохранённая очередь повреждена. Данные оставлены без изменений.',
+
   'Inspect event': 'Просмотр события',
   Timeline: 'Лента событий',
   'Recorded observations, newest first. Source clocks may differ; order does not imply causality.':

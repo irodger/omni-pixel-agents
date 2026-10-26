@@ -16,7 +16,7 @@ import { AcpClient } from './adapters/acpClient.js';
 import { discoverAdapters } from './adapters/registry.js';
 import { HistoryError } from './history.js';
 import { OpaOffice } from './office.js';
-import { changeTask, opaWorkSnapshot, updateTaskExecution, WorkError } from './work.js';
+import { changeTask, opaWorkSnapshot, taskQueue, updateTaskExecution, WorkError } from './work.js';
 
 export function availableExecutors() {
   return discoverAdapters().executors;
@@ -74,44 +74,67 @@ export function executeTaskCommand(store: AgentStateStore, raw: Record<string, u
       throw new WorkError('PERMISSION_STALE');
     return before;
   }
-  const selected = raw.assignee === undefined ? before?.assignee : raw.assignee;
-  const launch =
-    !!selected &&
-    (raw.launch === true || (!before && raw.action === 'create') || selected !== before?.assignee);
+  if (raw.launch === true) throw new WorkError('EXPLICIT_START_REQUIRED');
   const active = runs.get(store)?.get(before ? key(before) : '');
-  if (active && raw.action === 'create') return changeTask(store, raw);
-  if (active && raw.status !== 'cancelled') throw new WorkError('TASK_RUNNING');
-  const executor = availableExecutors().find((e) => e.id === selected);
-  if (launch) {
-    if (!executor) throw new WorkError('EXECUTOR_UNAVAILABLE');
-    if (raw.status === 'done' || raw.status === 'cancelled') throw new WorkError('TASK_INVALID');
-    try {
-      if (!statSync(String(raw.projectPath)).isDirectory()) throw Error();
-    } catch {
-      throw new WorkError('PROJECT_UNAVAILABLE');
-    }
+  if (raw.action === 'start') {
+    if (!before) throw new WorkError('TASK_NOT_FOUND');
+    if (taskQueue(store, before.projectPath).taskIds.includes(before.id))
+      throw new WorkError('TASK_QUEUED');
+    const executor = validateTaskStart(store, before, raw.expectedRevision);
     if (
-      opaWorkSnapshot(store).tasks.some(
-        (t) => t.projectPath === raw.projectPath && runs.get(store)?.has(key(t)),
+      ['title', 'assignee', 'status', 'launch', 'runId', 'permissionId', 'optionId'].some(
+        (field) => raw[field] !== undefined,
       )
     )
-      throw new WorkError('PROJECT_BUSY');
+      throw new WorkError('TASK_INVALID');
+    const task = changeTask(store, {
+      action: 'update',
+      requestId: raw.requestId,
+      projectPath: before.projectPath,
+      taskId: before.id,
+      expectedRevision: before.revision,
+      status: 'open',
+    });
+    try {
+      start(store, task, executor);
+    } catch {
+      throw new WorkError('LAUNCH_FAILED');
+    }
+    return opaWorkSnapshot(store).tasks.find((t) => key(t) === key(task))!;
   }
-  if (launch && before && ['done', 'cancelled'].includes(before.status) && raw.status !== 'open')
-    throw new WorkError('TASK_INVALID');
+  if (active && raw.action === 'create') return changeTask(store, raw);
+  if (active && raw.status !== 'cancelled') throw new WorkError('TASK_RUNNING');
   const task = changeTask(store, raw);
   if (active && raw.status === 'cancelled') {
     active.stop();
     return task;
   }
-  if (!launch || !executor || (before?.execution && raw.action === 'create')) return task;
-  try {
-    start(store, task, executor);
-  } catch {
-    throw new WorkError('LAUNCH_FAILED');
-  }
-  return opaWorkSnapshot(store).tasks.find((t) => key(t) === key(task))!;
+  return task;
 }
+/** Preflight is read-only; callers must still reserve dispatch durably before spawning. */
+export function validateTaskStart(
+  store: AgentStateStore,
+  task: OpaTask,
+  expectedRevision: unknown,
+) {
+  if (expectedRevision !== task.revision) throw new WorkError('TASK_CONFLICT');
+  if (isTaskRunning(store, task)) throw new WorkError('TASK_RUNNING');
+  const executor = availableExecutors().find((e) => e.id === task.assignee);
+  if (!executor) throw new WorkError('EXECUTOR_UNAVAILABLE');
+  try {
+    if (!statSync(task.projectPath).isDirectory()) throw Error();
+  } catch {
+    throw new WorkError('PROJECT_UNAVAILABLE');
+  }
+  if (
+    opaWorkSnapshot(store).tasks.some(
+      (t) => t.projectPath === task.projectPath && isTaskRunning(store, t),
+    )
+  )
+    throw new WorkError('PROJECT_BUSY');
+  return executor;
+}
+
 function start(
   store: AgentStateStore,
   task: OpaTask,
