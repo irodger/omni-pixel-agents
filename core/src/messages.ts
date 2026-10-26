@@ -11,6 +11,7 @@ export type ServerMessage =
   | OpaCampusState
   | OpaWorkState
   | OpaTaskResult
+  | OpaTaskRunsPage
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -53,6 +54,7 @@ export type ServerMessage =
 
 export type ClientMessage =
   | OpaTaskCommand
+  | OpaTaskRunsRequest
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -222,6 +224,27 @@ export interface OpaTaskResult {
   error?: string;
   additionalProperties?: Record<string, any>;
 }
+
+export interface OpaTaskRunsPage {
+  type: 'opaTaskRunsPage';
+  requestId: string;
+  runs: OpaTaskRunRecord[];
+  nextCursor?: string;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaTaskRunRecord {
+  version: OpaTaskRunVersion;
+  projectPath: string;
+  taskId: string;
+  title: string;
+  titleFromLegacyTask?: boolean;
+  execution: OpaExecution;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaTaskRunVersion = 1;
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -540,6 +563,17 @@ export interface OpaTaskCommand {
 }
 
 export type OpaTaskAction = 'create' | 'update' | 'permission' | 'move';
+
+export interface OpaTaskRunsRequest {
+  type: 'opaTaskRunsRequest';
+  requestId: string;
+  projectPath: string;
+  taskId: string;
+  limit?: number;
+  before?: string;
+  runId?: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface WebviewReady {
   type: 'webviewReady';

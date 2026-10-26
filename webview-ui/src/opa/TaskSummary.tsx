@@ -5,7 +5,7 @@ import { localeName, t, useLanguage } from '../i18n/index.js';
 import { LinkControls } from './LinkControls.js';
 import { taskSummary } from './summaryModel.js';
 
-export function TaskSummary({ task }: { task: OpaTask }) {
+export function TaskSummary({ task, historical = false }: { task: OpaTask; historical?: boolean }) {
   const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [copyFallback, setCopyFallback] = useState('');
@@ -21,8 +21,14 @@ export function TaskSummary({ task }: { task: OpaTask }) {
       <dl>
         <dt>{t('Execution')}</dt>
         <dd>{t(run.state)}</dd>
-        <dt>{t('Task status')}</dt>
-        <dd>{t(task.status)}</dd>
+        <dt>{t(historical ? 'Current task status' : 'Task status')}</dt>
+        <dd>
+          {t(
+            { open: 'Open', in_progress: 'In progress', done: 'Done', cancelled: 'Cancelled' }[
+              task.status
+            ],
+          )}
+        </dd>
         <dt>{t('Run ID')}</dt>
         <dd>{run.runId}</dd>
         <dt>{t('Executor')}</dt>
@@ -69,7 +75,9 @@ export function TaskSummary({ task }: { task: OpaTask }) {
           {t('Result truncated: only the last 8000 characters were retained.')}
         </p>
       )}
-      <LinkControls route={{ view: 'tasks', project: task.projectPath, task: task.id }} />
+      <LinkControls
+        route={{ view: 'tasks', project: task.projectPath, task: task.id, run: run.runId }}
+      />
       {run.provider && run.sessionId && run.sourceAgentId && (
         <a
           className="opa-button"

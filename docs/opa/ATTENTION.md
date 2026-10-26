@@ -1,4 +1,4 @@
-# Attention Lite (planned PR3)
+# Attention Lite (PR3, delivered in #25)
 
 The **Attention Inbox** tab unifies current source-agent blocks/errors/completions with task permission blocks and terminal run results, including failed, cancelled and interrupted runs. Project selection filters the list. Blocks come first, then errors and unread results, oldest known time first; unknown waiting times have no fabricated timer. Campus/legacy-office entry counts, the overview preview and Ambient use the same projection.
 

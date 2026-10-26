@@ -22,7 +22,8 @@ const { AgentStateStore } = await import('../src/agentStateStore.js');
 const { OpaOffice } = await import('../src/opa/office.js');
 const { opaCampusSnapshot } = await import('../src/opa/campus.js');
 const { OpaNormalizer } = await import('../../core/src/opa/normalize.js');
-const { changeTask, opaWorkSnapshot } = await import('../src/opa/work.js');
+const { changeTask, opaWorkSnapshot, taskRunsPage, updateTaskExecution } =
+  await import('../src/opa/work.js');
 
 describe('FileStateAdapter', () => {
   beforeEach(() => {
@@ -31,6 +32,56 @@ describe('FileStateAdapter', () => {
 
   afterEach(() => {
     fs.rmSync(tempHome, { recursive: true, force: true });
+  });
+
+  it('preserves run history while other adapter state is saved and across host restart', () => {
+    const adapter = new FileStateAdapter({ namespace: 'standalone' });
+    const store = new AgentStateStore();
+    store.setAdapter(adapter);
+    const task = changeTask(store, {
+      action: 'create',
+      requestId: 't',
+      projectPath: tempHome,
+      title: 'Fixture history',
+    });
+    updateTaskExecution(
+      store,
+      task,
+      { runId: 'r1', state: 'running', journal: '/fixture', startedAt: 1 },
+      'in_progress',
+    );
+    updateTaskExecution(
+      store,
+      task,
+      {
+        runId: 'r1',
+        state: 'completed',
+        journal: '/fixture',
+        startedAt: 1,
+        finishedAt: 2,
+        output: 'First attempt',
+      },
+      'done',
+    );
+    updateTaskExecution(
+      store,
+      task,
+      { runId: 'r2', state: 'running', journal: '/fixture', startedAt: 3 },
+      'in_progress',
+    );
+    adapter.saveSeats({ 1: { seatId: 'seat' } });
+    adapter.saveOpaProjects([tempHome]);
+    const restored = new AgentStateStore();
+    restored.setAdapter(new FileStateAdapter({ namespace: 'standalone' }));
+    const history = taskRunsPage(restored, { projectPath: task.projectPath, taskId: task.id }).runs;
+    expect(history.map((r) => r.execution.state)).toEqual(['interrupted', 'completed']);
+    expect(
+      taskRunsPage(restored, { projectPath: task.projectPath, taskId: task.id, runId: 'r1' })
+        .runs[0].execution.output,
+    ).toBe('First attempt');
+    expect(adapter.loadSeats()).toEqual({ 1: { seatId: 'seat' } });
+    expect(adapter.loadOpaProjects()).toEqual([tempHome]);
+    expect(adapter.loadOpaWork().runs).toHaveLength(2);
   });
 
   it('isolates project layouts, survives restart and rejects stale edits after reset', async () => {

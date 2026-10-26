@@ -194,6 +194,8 @@ export function CampusPanel({
                 view={view}
                 readOnly={readOnly}
                 selectedTaskId={current.task}
+                selectedRunId={current.run}
+                navigate={navigate}
               />
             ) : (
               <>

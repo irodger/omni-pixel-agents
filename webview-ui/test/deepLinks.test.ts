@@ -43,7 +43,12 @@ describe('versioned passive deep links', () => {
     expect(vscodeProjectLink('/a\n')).toBeNull();
   });
   it('round trips encoded identities and removes credentials and every query parameter', () => {
-    const route = { view: 'tasks' as const, project: '/a/Проект #?&', task: 'id #&?' };
+    const route = {
+      view: 'tasks' as const,
+      project: '/a/Проект #?&',
+      task: 'id #&?',
+      run: 'run #1',
+    };
     const link = publicLink('https://user:pass@localhost:3100/?token=secret&prompt=run#old', route);
     expect(link).not.toContain('secret');
     const url = new URL(link);
@@ -61,6 +66,8 @@ describe('versioned passive deep links', () => {
     '#opa?v=1&view=overview&project=%00',
     '#opa?v=1&view=overview&project=%xy',
     '#opa?v=1&view=overview&session=x',
+    '#opa?v=1&view=tasks&project=%2Ffixture&run=orphan',
+    '#opa?v=1&view=overview&project=%2Ffixture&task=t&run=r',
     '#other',
   ])('rejects malformed routes: %s', (hash) => expect(parseRoute(hash)).toBeNull());
   it('resolves full project and source identity without relying on display names or transient numeric IDs', () => {

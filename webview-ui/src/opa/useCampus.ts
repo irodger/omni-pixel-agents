@@ -1,11 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
   OpaAgentSnapshot,
   OpaProjectSnapshot,
   SaveLayout,
 } from '../../../core/src/messages.js';
-import type { OpaTask, OpaTaskCommand, OpaUsage } from '../../../core/src/opa/work.js';
+import type {
+  OpaTask,
+  OpaTaskCommand,
+  OpaUsage,
+  TaskRunsPage,
+  TaskRunsQuery,
+} from '../../../core/src/opa/work.js';
 import { transport } from '../transport/index.js';
 import { markSeen, MAX_SEEN_EVENTS } from './attention.js';
 
@@ -30,6 +36,12 @@ export function useCampus() {
   const pending = useRef(
     new Map<string, { resolve: () => void; reject: (e: Error) => void; timer: number }>(),
   );
+  const historyRequests = useRef(
+    new Map<
+      string,
+      { resolve: (page: TaskRunsPage) => void; reject: (error: Error) => void; timer: number }
+    >(),
+  );
   const [projects, setProjects] = useState<OpaProjectSnapshot[]>([]);
   const [seen, setSeen] = useState(readSeen);
   const [now, setNow] = useState(Date.now);
@@ -51,6 +63,15 @@ export function useCampus() {
           setTasks(message.tasks);
           setExecutors(message.executors ?? []);
           setUsage(message.usage);
+        }
+        if (message.type === 'opaTaskRunsPage') {
+          const request = historyRequests.current.get(message.requestId);
+          if (request) {
+            window.clearTimeout(request.timer);
+            historyRequests.current.delete(message.requestId);
+            if (message.error) request.reject(new Error(message.error));
+            else request.resolve({ runs: message.runs, nextCursor: message.nextCursor });
+          }
         }
         if (message.type === 'opaTaskResult') {
           const request = pending.current.get(message.requestId);
@@ -74,6 +95,33 @@ export function useCampus() {
       requests.clear();
     };
   }, []);
+  useEffect(() => {
+    const requests = historyRequests.current;
+    return () => {
+      requests.forEach((r) => {
+        window.clearTimeout(r.timer);
+        r.reject(new Error('REQUEST_TIMEOUT'));
+      });
+      requests.clear();
+    };
+  }, []);
+  const requestHistory = useCallback(
+    (query: TaskRunsQuery) =>
+      new Promise<TaskRunsPage>((resolve, reject) => {
+        if (transport.state !== 'connected') {
+          reject(new Error('REQUEST_TIMEOUT'));
+          return;
+        }
+        const requestId = crypto.randomUUID();
+        const timer = window.setTimeout(() => {
+          historyRequests.current.delete(requestId);
+          reject(new Error('REQUEST_TIMEOUT'));
+        }, 10000);
+        historyRequests.current.set(requestId, { resolve, reject, timer });
+        transport.send({ type: 'opaTaskRunsRequest', requestId, ...query });
+      }),
+    [],
+  );
   const saveCommand = (
     command: Omit<OpaTaskCommand, 'requestId'> | Omit<SaveLayout, 'requestId'>,
   ) =>
@@ -121,6 +169,7 @@ export function useCampus() {
   const saveLayout = (command: Omit<SaveLayout, 'requestId'>) => saveCommand(command);
   return {
     saveLayout,
+    requestHistory,
     projectsLoaded,
     workLoaded,
     projects,

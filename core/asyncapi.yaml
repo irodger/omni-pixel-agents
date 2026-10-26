@@ -80,6 +80,7 @@ components:
         - $ref: '#/components/schemas/OpaCampusState'
         - $ref: '#/components/schemas/OpaWorkState'
         - $ref: '#/components/schemas/OpaTaskResult'
+        - $ref: '#/components/schemas/OpaTaskRunsPage'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
         # Agent lifecycle
@@ -135,6 +136,7 @@ components:
     ClientMessage:
       oneOf:
         - $ref: '#/components/schemas/OpaTaskCommand'
+        - $ref: '#/components/schemas/OpaTaskRunsRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
         - $ref: '#/components/schemas/FocusAgent'
@@ -1565,6 +1567,39 @@ components:
         optionId: { type: string }
         name: { type: string }
         kind: { type: string }
+    OpaTaskRunVersion:
+      type: integer
+      enum: [1]
+    OpaTaskRunRecord:
+      type: object
+      required: [version, projectPath, taskId, title, execution]
+      properties:
+        version: { $ref: '#/components/schemas/OpaTaskRunVersion' }
+        projectPath: { type: string }
+        taskId: { type: string }
+        title: { type: string }
+        titleFromLegacyTask: { type: boolean }
+        execution: { $ref: '#/components/schemas/OpaExecution' }
+    OpaTaskRunsRequest:
+      type: object
+      required: [type, requestId, projectPath, taskId]
+      properties:
+        type: { type: string, const: opaTaskRunsRequest }
+        requestId: { type: string }
+        projectPath: { type: string }
+        taskId: { type: string }
+        limit: { type: integer, minimum: 1, maximum: 50 }
+        before: { type: string }
+        runId: { type: string }
+    OpaTaskRunsPage:
+      type: object
+      required: [type, requestId, runs]
+      properties:
+        type: { type: string, const: opaTaskRunsPage }
+        requestId: { type: string }
+        runs: { type: array, items: { $ref: '#/components/schemas/OpaTaskRunRecord' } }
+        nextCursor: { type: string }
+        error: { type: string }
     OpaExecution:
       type: object
       required: [runId, state, journal, startedAt]

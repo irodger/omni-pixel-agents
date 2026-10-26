@@ -15,7 +15,7 @@ import {
   executeTaskCommand,
   stopTaskExecutions,
 } from '../src/opa/execution.js';
-import { changeTask, opaWorkSnapshot } from '../src/opa/work.js';
+import { changeTask, opaWorkSnapshot, taskRunsPage } from '../src/opa/work.js';
 
 const roots: string[] = [];
 const stores: AgentStateStore[] = [];
@@ -113,6 +113,19 @@ describe('task dispatch', () => {
     });
     expect(retry.execution?.runId).not.toBe(failed.execution?.runId);
     await finished(store);
+    const history = taskRunsPage(store, {
+      projectPath: failed.projectPath,
+      taskId: failed.id,
+    }).runs;
+    expect(history).toHaveLength(2);
+    expect(
+      taskRunsPage(store, {
+        projectPath: failed.projectPath,
+        taskId: failed.id,
+        runId: failed.execution!.runId,
+      }).runs[0].execution,
+    ).toEqual(failed.execution);
+    expect(history[0].execution.runId).toBe(retry.execution?.runId);
   });
   it('cancels a running process and blocks conflicting edits', async () => {
     const { store, command } = setup('setInterval(()=>{},1000)');

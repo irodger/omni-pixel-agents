@@ -3,9 +3,10 @@ import { useRef, useState } from 'react';
 import type { OpaTask, OpaTaskCommand, TaskStatus } from '../../../core/src/opa/work.js';
 import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
+import type { CampusRoute } from './deepLinks.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
-import { TaskSummary } from './TaskSummary.js';
+import { TaskHistory } from './TaskHistory.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
@@ -23,12 +24,16 @@ export function WorkPanel({
   view,
   readOnly,
   selectedTaskId,
+  selectedRunId,
+  navigate,
 }: {
   campus: ReturnType<typeof useCampus>;
   projectId: string | null;
   view: 'tasks' | 'usage';
   readOnly: boolean;
   selectedTaskId?: string;
+  selectedRunId?: string;
+  navigate: (route: CampusRoute) => void;
 }) {
   const { language } = useLanguage();
   const [title, setTitle] = useState('');
@@ -97,7 +102,9 @@ export function WorkPanel({
     <article
       key={`${task.projectPath}:${task.id}`}
       className="opa-task"
-      draggable={taskLayout === 'board' && !disabled && task.execution?.state !== 'running'}
+      draggable={
+        !selectedRunId && taskLayout === 'board' && !disabled && task.execution?.state !== 'running'
+      }
       onDragStart={(event) => {
         if (disabled || task.execution?.state === 'running') {
           event.preventDefault();
@@ -111,7 +118,9 @@ export function WorkPanel({
     >
       <div>
         <h3>{task.title}</h3>
-        <LinkControls route={{ view: 'tasks', project: task.projectPath, task: task.id }} />
+        <LinkControls
+          route={{ view: 'tasks', project: task.projectPath, task: task.id, run: selectedRunId }}
+        />
         <p className="opa-muted">
           {projectName(task.projectPath)} ·{' '}
           {campus.executors.find((e) => e.id === task.assignee)?.name ||
@@ -119,7 +128,7 @@ export function WorkPanel({
             t('Unassigned')}
         </p>
       </div>
-      {task.execution && (
+      {!selectedRunId && task.execution && (
         <div className="opa-muted">
           <p>
             {t('Execution')}: {t(task.execution.state)}
@@ -179,48 +188,52 @@ export function WorkPanel({
           )}
         </div>
       )}
-      <TaskSummary task={task} />
-      <select
-        ref={(element) => {
-          const key = JSON.stringify([task.projectPath, task.id]);
-          if (element) statusControls.current.set(key, element);
-          else statusControls.current.delete(key);
-        }}
-        aria-label={`${t('Task status')}: ${task.title}`}
-        value={task.status}
-        disabled={disabled || task.execution?.state === 'running'}
-        onChange={(e) => void moveTask(task, e.target.value as TaskStatus)}
-      >
-        {taskStatuses.map((s) => (
-          <option key={s} value={s}>
-            {t(statusLabels[s])}
-          </option>
-        ))}
-      </select>
-      {task.execution?.state === 'running' && (
-        <button
-          className="opa-button"
-          disabled={disabled}
-          onClick={() =>
-            void send({
-              action: 'update',
-              projectPath: task.projectPath,
-              taskId: task.id,
-              expectedRevision: task.revision,
-              status: 'cancelled',
-            })
-          }
-        >
-          {t('Stop agent')}
-        </button>
+      <TaskHistory task={task} campus={campus} selectedRunId={selectedRunId} navigate={navigate} />
+      {!selectedRunId && (
+        <>
+          <select
+            ref={(element) => {
+              const key = JSON.stringify([task.projectPath, task.id]);
+              if (element) statusControls.current.set(key, element);
+              else statusControls.current.delete(key);
+            }}
+            aria-label={`${t('Task status')}: ${task.title}`}
+            value={task.status}
+            disabled={disabled || task.execution?.state === 'running'}
+            onChange={(e) => void moveTask(task, e.target.value as TaskStatus)}
+          >
+            {taskStatuses.map((s) => (
+              <option key={s} value={s}>
+                {t(statusLabels[s])}
+              </option>
+            ))}
+          </select>
+          {task.execution?.state === 'running' && (
+            <button
+              className="opa-button"
+              disabled={disabled}
+              onClick={() =>
+                void send({
+                  action: 'update',
+                  projectPath: task.projectPath,
+                  taskId: task.id,
+                  expectedRevision: task.revision,
+                  status: 'cancelled',
+                })
+              }
+            >
+              {t('Stop agent')}
+            </button>
+          )}
+          <button
+            className="opa-button"
+            disabled={disabled || task.execution?.state === 'running'}
+            onClick={() => editTask(task)}
+          >
+            {t('Edit task')}
+          </button>
+        </>
       )}
-      <button
-        className="opa-button"
-        disabled={disabled || task.execution?.state === 'running'}
-        onClick={() => editTask(task)}
-      >
-        {t('Edit task')}
-      </button>
     </article>
   );
   if (view === 'tasks')
@@ -255,7 +268,7 @@ export function WorkPanel({
             {t('Read-only. Open the management link printed by the server to edit tasks.')}
           </p>
         )}
-        {taskLayout === 'board' && !editing && (
+        {!selectedRunId && taskLayout === 'board' && !editing && (
           <button
             type="button"
             className="opa-button"
@@ -266,7 +279,7 @@ export function WorkPanel({
             {t(showComposer ? 'Hide task form' : 'New task')}
           </button>
         )}
-        {(taskLayout === 'list' || showComposer || editing) && (
+        {!selectedRunId && (taskLayout === 'list' || showComposer || editing) && (
           <>
             <form
               className="opa-task-form"
