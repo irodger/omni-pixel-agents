@@ -18,6 +18,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import type { ProjectLayouts, StateAdapter } from '../../core/src/adapter.js';
+import type { OpaEventHistory } from '../../core/src/opa/history.js';
 import type { OpaWorkData } from '../../core/src/opa/work.js';
 import { isTask, isUsage } from '../../core/src/opa/work.js';
 import type { PersistedAgent } from '../../core/src/schemas.js';
@@ -36,6 +37,7 @@ function settingNameOf(key: string): AdapterSettingKey | null {
 interface AdapterState {
   projectLayouts?: ProjectLayouts;
   opaWork?: OpaWorkData;
+  opaHistory?: OpaEventHistory;
   opaProjects?: string[];
   agents: PersistedAgent[];
   seats: Record<string, { palette?: number; hueShift?: number; seatId?: string }>;
@@ -49,6 +51,7 @@ export interface FileStateAdapterOptions {
 
 export class FileStateAdapter implements StateAdapter {
   private readonly namespace: ConfigNamespace;
+  private stateReadFailed = false;
   private readonly stateFilePath: string;
 
   constructor(options: FileStateAdapterOptions) {
@@ -114,6 +117,14 @@ export class FileStateAdapter implements StateAdapter {
   loadOpaProjects(): string[] {
     return this.readState().opaProjects ?? [];
   }
+  loadOpaHistory(): OpaEventHistory | undefined {
+    return this.readState(true).opaHistory;
+  }
+  saveOpaHistory(data: OpaEventHistory): void {
+    const state = this.readState(true);
+    state.opaHistory = data;
+    this.writeState(state, true);
+  }
   loadOpaWork(): OpaWorkData {
     return this.readState().opaWork ?? { tasks: [], usage: [] };
   }
@@ -129,15 +140,20 @@ export class FileStateAdapter implements StateAdapter {
     this.writeState(state);
   }
 
-  private readState(): AdapterState {
+  private readState(strict = false): AdapterState {
     try {
       if (!fs.existsSync(this.stateFilePath)) {
+        this.stateReadFailed = false;
         return { agents: [], seats: {} };
       }
       const raw = fs.readFileSync(this.stateFilePath, 'utf-8');
       const parsed = JSON.parse(raw) as Partial<AdapterState>;
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+        throw new Error('Invalid adapter state root');
+      this.stateReadFailed = false;
       return {
         projectLayouts: parsed.projectLayouts,
+        opaHistory: parsed.opaHistory,
         opaWork: parsed.opaWork
           ? {
               ...parsed.opaWork,
@@ -157,12 +173,20 @@ export class FileStateAdapter implements StateAdapter {
             : {},
       };
     } catch (err) {
+      this.stateReadFailed = true;
       console.error('[Pixel Agents] Failed to read adapter state:', err);
+      if (strict) throw err;
       return { ...EMPTY_STATE };
     }
   }
 
   private writeState(state: AdapterState, strict = false): void {
+    if (this.stateReadFailed) {
+      const error = new Error('Refusing to overwrite unreadable adapter state');
+      if (strict) throw error;
+      console.error('[Pixel Agents]', error.message);
+      return;
+    }
     const dir = path.dirname(this.stateFilePath);
     try {
       if (!fs.existsSync(dir)) {

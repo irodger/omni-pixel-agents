@@ -39,9 +39,9 @@ Role values are open strings (coder, tester, designer, reviewer, documentation, 
 
 [JSON Schema](event.schema.json) is the portable contract. Server runtime validation checks required fields/types, version and event payloads. Unknown envelope fields are tolerated for additive extensions. Unknown event types and unsupported versions are rejected. Fields beyond the specified contract must not be required by a consumer; breaking semantic/shape changes need a new version.
 
-`POST /api/opa/events` accepts one event per request with `Authorization: Bearer <office-token>`. Missing/invalid auth returns 401, malformed events 400, activity before session start 409, accepted events 200 with `{ "accepted": true }`. Duplicate or stale per-agent/per-stream sequences return `{ "accepted": false }`. The existing server body limit applies. Lifecycle projections are in memory; replay restores active agents. Tasks and usage are durable host state, independently of session lifecycle. The server does not write a second event journal.
+`POST /api/opa/events` accepts one event per request with `Authorization: Bearer <office-token>`. Missing/invalid auth returns 401, malformed events 400, activity before session start 409, accepted events 200 with `{ "accepted": true }`. Duplicate or stale per-agent/per-stream sequences return `{ "accepted": false }`. The existing server body limit applies. Lifecycle projections are in memory; replay restores active agents. Tasks and usage are durable host state, independently of session lifecycle. PR5 adds a bounded local index of these same normalized observations for paginated retrieval; producer/task journals remain the source for full replay. See [event history](EVENT_HISTORY.md).
 
-Deduplication and stream/agent sequence bookkeeping currently last for the server process lifetime and are not bounded/compacted. This is a local MVP, not a hosted multi-tenant event collector. Live bridge requests have a five-second timeout; the OpenCode plugin uses two seconds. Neither automatically retries. The producer journal remains the recoverable source.
+The PR5 observation index retains bounded per-stream high-water marks across restarts independently of its event window. Live projection sequence bookkeeping is shared within one host process and reconstructed by replay, not by executing history. This is a local MVP, not a hosted multi-tenant event collector. Live bridge requests have a five-second timeout; the OpenCode plugin uses two seconds. Neither automatically retries. The producer journal remains the recoverable source.
 
 ## Data policy and coverage
 
@@ -116,3 +116,7 @@ New local execution records may carry `executorId`, source `provider`/`sessionId
 ## TaskRun history (PR4, in review)
 
 The host preserves independent version-1 attempts in `opaWork.runs`, while task `execution` remains the current/latest projection. `runHistoryVersion` versions the ledger. Terminal attempts are immutable; legacy/latest records migrate conservatively and abandoned running markers become interrupted without execution or invented finish times. History excludes transient permission options. Paginated REST/observer messages retrieve metadata or one selected run's evidence; none are portable OPA command events. See [TaskRun history](TASK_RUNS.md) for schema, access, migration and limits.
+
+## Bounded event index (PR5, in review)
+
+`opaHistory` is a versioned local observation index, not new portable OPA event types. It preserves receipt order, source identity and provenance, has explicit retention gaps, and supports project/run/session filtering plus labelled paged JSONL export. It never stores transient approval options or grants command authority. See [Event History](EVENT_HISTORY.md) for limits, error behavior and replay-tail handling.

@@ -12,6 +12,7 @@ export type ServerMessage =
   | OpaWorkState
   | OpaTaskResult
   | OpaTaskRunsPage
+  | OpaEventHistoryPage
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -55,6 +56,7 @@ export type ServerMessage =
 export type ClientMessage =
   | OpaTaskCommand
   | OpaTaskRunsRequest
+  | OpaEventHistoryRequest
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -245,6 +247,30 @@ export interface OpaTaskRunRecord {
 }
 
 export type OpaTaskRunVersion = 1;
+
+export interface OpaEventHistoryPage {
+  type: 'opaEventHistoryPage';
+  requestId: string;
+  entries: OpaHistoryEntry[];
+  nextCursor?: number;
+  droppedThrough?: number;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaHistoryEntry {
+  ordinal: number;
+  observedAt: number;
+  projectPath: string;
+  origin: OpaHistoryOrigin;
+  taskId?: string;
+  runId?: string;
+  truncatedFields?: string[];
+  event: Record<string, any>;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaHistoryOrigin = 'ingestion' | 'task-journal' | 'fixture';
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -572,6 +598,20 @@ export interface OpaTaskRunsRequest {
   limit?: number;
   before?: string;
   runId?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaEventHistoryRequest {
+  type: 'opaEventHistoryRequest';
+  requestId: string;
+  projectPath: string;
+  taskId?: string;
+  runId?: string;
+  provider?: string;
+  sessionId?: string;
+  eventType?: string;
+  before?: number;
+  limit?: number;
   additionalProperties?: Record<string, any>;
 }
 

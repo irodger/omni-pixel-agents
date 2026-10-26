@@ -49,6 +49,7 @@ import {
 } from '../../server/src/layoutPersistence.js';
 import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
+import { historyReply } from '../../server/src/opa/history.js';
 import { saveProjectLayout } from '../../server/src/opa/projectLayouts.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from '../../server/src/opa/work.js';
 import { PathSet } from '../../server/src/pathKey.js';
@@ -464,7 +465,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getWebviewContent(webviewView.webview, this.extensionUri);
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'opaTaskRunsRequest') {
+      if (message.type === 'opaEventHistoryRequest') {
+        this.webview?.postMessage(historyReply(this.store, message));
+      } else if (message.type === 'opaTaskRunsRequest') {
         this.webview?.postMessage(taskRunsReply(this.store, message));
       } else if (message.type === 'opaTaskCommand') {
         try {
