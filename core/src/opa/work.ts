@@ -1,10 +1,12 @@
 import type { PermissionRequest } from './adapters/types.js';
 import type { OpaAttentionFact } from './attention.js';
 import { isGitContext, type OpaGitContext } from './gitContext.js';
+import { isWorktreeBinding, type OpaWorktreeBinding } from './worktree.js';
 
 /** Durable project work; independent of any agent process or renderer. */
 export type TaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
 export interface OpaTask {
+  worktree?: OpaWorktreeBinding;
   id: string;
   projectPath: string;
   title: string;
@@ -16,6 +18,8 @@ export interface OpaTask {
   revision: number;
 }
 export interface TaskExecution {
+  cwd?: string;
+  worktree?: OpaWorktreeBinding;
   gitContext?: OpaGitContext;
   gitContextAfter?: OpaGitContext;
   runId: string;
@@ -144,6 +148,7 @@ export function isTask(v: unknown): v is OpaTask {
     ['id', 'projectPath', 'title'].every(
       (k) => typeof v[k] === 'string' && (v[k] as string).trim().length > 0,
     ) &&
+    (v.worktree === undefined || isWorktreeBinding(v.worktree)) &&
     taskStatuses.includes(v.status as TaskStatus) &&
     (v.assignee === undefined || typeof v.assignee === 'string') &&
     validCount(v.createdAt) &&
@@ -174,6 +179,9 @@ export function isTaskExecution(v: unknown): v is TaskExecution {
       'resultEventId',
     ].every((k) => v[k] === undefined || typeof v[k] === 'string')
   )
+    return false;
+  if (v.worktree !== undefined && !isWorktreeBinding(v.worktree)) return false;
+  if (v.cwd !== undefined && (typeof v.cwd !== 'string' || !v.cwd || v.cwd.length > 8192))
     return false;
   if (v.gitContext !== undefined && !isGitContext(v.gitContext)) return false;
   if (v.gitContextAfter !== undefined && !isGitContext(v.gitContextAfter)) return false;

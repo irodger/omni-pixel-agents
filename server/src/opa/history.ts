@@ -15,7 +15,9 @@ export const HISTORY_LIMITS = {
   streams: 4096,
   entryBytes: 32768,
 };
-export type HistoryContext = Pick<OpaHistoryEntry, 'origin' | 'taskId' | 'runId'>;
+export type HistoryContext = Pick<OpaHistoryEntry, 'origin' | 'taskId' | 'runId'> & {
+  projectPath?: string;
+};
 const states = new WeakMap<AgentStateStore, OpaEventHistory>();
 const sessionKey = (e: OpaEvent) => JSON.stringify([e.provider, e.sessionId, e.agentId]);
 const streamKey = (e: OpaEvent) => JSON.stringify([e.provider, e.sessionId, e.agentId, e.streamId]);
@@ -168,6 +170,8 @@ export function recordHistory(
   if (
     !count(now) ||
     !['ingestion', 'task-journal', 'fixture'].includes(context.origin) ||
+    (context.projectPath !== undefined &&
+      (context.origin !== 'task-journal' || !text(context.projectPath))) ||
     [context.taskId, context.runId].some((v) => v !== undefined && !text(v, 200))
   )
     throw new HistoryError('EVENT_HISTORY_EVENT_INVALID');
@@ -183,8 +187,9 @@ export function recordHistory(
   );
   if (duplicate) throw new HistoryError('EVENT_HISTORY_ID_CONFLICT');
   const session = sessionKey(event);
-  const project =
-    event.type === 'session.started' || event.type === 'task.upserted'
+  const project = context.projectPath
+    ? toPathKey(context.projectPath)
+    : event.type === 'session.started' || event.type === 'task.upserted'
       ? toPathKey(event.cwd)
       : event.type === 'usage.reported'
         ? toPathKey(event.usage.projectPath)
@@ -199,8 +204,8 @@ export function recordHistory(
   const entry: OpaHistoryEntry = {
     ordinal: data.nextOrdinal,
     observedAt: now,
-    projectPath: project,
     ...context,
+    projectPath: project,
     ...normalized,
   };
   if (Buffer.byteLength(JSON.stringify(entry)) > limits.entryBytes)

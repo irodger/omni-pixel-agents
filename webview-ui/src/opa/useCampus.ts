@@ -17,6 +17,7 @@ import type {
   TaskRunsPage,
   TaskRunsQuery,
 } from '../../../core/src/opa/work.js';
+import type { OpaWorktreeCommand } from '../../../core/src/opa/worktree.js';
 import { transport } from '../transport/index.js';
 import { markSeen, MAX_SEEN_EVENTS } from './attention.js';
 import { inboxItems } from './inbox.js';
@@ -278,8 +279,9 @@ export function useCampus() {
     command:
       | Omit<OpaTaskCommand, 'requestId'>
       | Omit<SaveLayout, 'requestId'>
-      | Omit<OpaQueueCommand, 'requestId'>,
-    type: 'opaTaskCommand' | 'opaQueueCommand' = 'opaTaskCommand',
+      | Omit<OpaQueueCommand, 'requestId'>
+      | Omit<OpaWorktreeCommand, 'requestId'>,
+    type: 'opaTaskCommand' | 'opaQueueCommand' | 'opaWorktreeCommand' = 'opaTaskCommand',
   ) =>
     new Promise<void>((resolve, reject) => {
       if (transport.state !== 'connected') {
@@ -444,6 +446,8 @@ export function useCampus() {
     executors,
     saveTask,
     queues,
+    saveWorktree: (command: Omit<OpaWorktreeCommand, 'requestId'>) =>
+      saveCommand(command, 'opaWorktreeCommand'),
     saveQueue: (command: Omit<OpaQueueCommand, 'requestId'>) =>
       saveCommand(command, 'opaQueueCommand'),
   };

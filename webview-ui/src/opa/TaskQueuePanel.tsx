@@ -94,7 +94,7 @@ export function TaskQueuePanel({
                   t('Start {title} with {executor} in {project}? This may incur provider costs.', {
                     title: first.title,
                     executor: first.assignee ?? '',
-                    project: first.projectPath,
+                    project: first.worktree?.cwd ?? first.projectPath,
                   }),
                 )
               )

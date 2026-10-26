@@ -1,4 +1,35 @@
 export const ru: Record<string, string> = {
+  'Task worktree': 'Worktree задачи',
+  'Setup is separate from Start. No automatic merge or cleanup; one run per repository remains the limit.':
+    'Настройка не запускает агента. Слияние и очистка выполняются вручную; одновременно допускается один запуск на репозиторий.',
+  'Base commit': 'Базовый коммит',
+  'No isolated worktree is bound. Start uses the project directory.':
+    'Отдельный worktree не привязан. Запуск использует папку проекта.',
+  'Open working directory in VS Code': 'Открыть рабочую папку в VS Code',
+  'Detach binding (keep files)': 'Снять привязку, сохранить файлы',
+  'Absolute worktree folder': 'Полный путь к папке worktree',
+  'Expected full commit ID': 'Ожидаемый полный ID коммита',
+  'New branch (create only)': 'Новая ветка (для создания)',
+  'Create worktree and bind': 'Создать worktree и привязать',
+  'Attach existing worktree': 'Подключить существующий worktree',
+  'Create needs an unused folder outside repositories and the current project HEAD. Attach needs the target HEAD. Dirty files are kept. Changed Git identity requires explicit reattachment before Start.':
+    'Для создания нужны свободная папка вне репозиториев и текущий HEAD проекта. Для подключения — HEAD целевого worktree. Изменённые файлы сохраняются. Если контекст Git изменился, перед запуском подключите worktree заново.',
+  'Detach the task binding? Worktree files and branch will be kept.':
+    'Снять привязку задачи? Файлы worktree и ветка сохранятся.',
+  'Set up this worktree without starting an agent? Review the folder, branch and commit below.':
+    'Настроить worktree без запуска агента? Проверьте папку, ветку и коммит ниже.',
+  'Worktree setup was not confirmed. Refresh task state and inspect the folder before retrying; files are never removed automatically.':
+    'Настройка worktree не подтверждена. Перед повтором обновите задачу и проверьте папку: файлы автоматически не удаляются.',
+  WORKTREE_CHANGED:
+    'Worktree изменился или недоступен. Проверьте его и явно подключите заново перед запуском.',
+  WORKTREE_HISTORY_INVALID:
+    'Сохранённая привязка worktree не читается. Данные оставлены без изменений.',
+  WORKTREE_FILTERS_UNSUPPORTED:
+    'Автоматическое создание недоступно при настроенных Git-фильтрах. Создайте worktree средствами Git и подключите существующий.',
+  WORKTREE_CREATED_NOT_BOUND:
+    'Worktree создан, но привязка не сохранена. Проверьте папку и подключите её как существующую.',
+  WORKTREE_CREATE_UNCERTAIN:
+    'Git не подтвердил создание. Проверьте папку, ветку и список worktree перед новым действием.',
   Available: 'Доступен',
   Observed: 'Зафиксировано',
   'Unknown (Git filters disabled)': 'Неизвестно (Git-фильтры отключены)',

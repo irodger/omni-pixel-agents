@@ -2,6 +2,10 @@ import type { Language } from '../i18n/catalog.js';
 import { translate } from '../i18n/catalog.js';
 
 const messages: Record<string, string> = {
+  WORKTREE_CHANGED:
+    'The bound worktree changed or is unavailable. Inspect it and explicitly attach it again before Start.',
+  WORKTREE_HISTORY_INVALID:
+    'The saved worktree binding could not be read. Stored data has been kept.',
   QUEUE_INVALID: 'The queue request is invalid. Refresh and try again.',
   QUEUE_CONFLICT: 'The queue changed. Review its current order and try again.',
   QUEUE_CAPACITY: 'The queue has reached its limit of 200 pending tasks or revisions.',

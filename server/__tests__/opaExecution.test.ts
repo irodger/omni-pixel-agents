@@ -1,3 +1,9 @@
+import { execFileSync } from 'node:child_process';
+import { delimiter } from 'node:path';
+
+import { historyPage } from '../src/opa/history.js';
+import { executeWorktreeCommand } from '../src/opa/worktree.js';
+const originalPath = process.env.PATH;
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -73,6 +79,118 @@ async function finished(store: AgentStateStore) {
   return opaWorkSnapshot(store).tasks[0];
 }
 describe('task dispatch', () => {
+  it('launches in the bound cwd, journals actual cwd under the logical task, and preserves dirty work on cancellation', async () => {
+    const { store, project, command } = setup(
+      success.replace("text:'Done from fixture'", 'text:process.cwd()'),
+    );
+    vi.stubEnv('PATH', join(project, '..', 'bin') + delimiter + originalPath);
+    const git = (...args: string[]) =>
+      execFileSync(
+        'git',
+        [
+          '-c',
+          'user.name=fixture',
+          '-c',
+          'user.email=fixture@example.invalid',
+          '-c',
+          'commit.gpgsign=false',
+          '-c',
+          'core.hooksPath=' + join(project, 'none'),
+          ...args,
+        ],
+        { cwd: project, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+      ).trim();
+    git('init', '-b', 'main');
+    writeFileSync(join(project, 'keep'), 'source');
+    git('add', 'keep');
+    git('commit', '-m', 'fixture');
+    const task = executeTaskCommand(store, command),
+      target = join(realpathSync(join(project, '..')), 'task-worktree');
+    executeWorktreeCommand(store, {
+      action: 'create',
+      requestId: 'worktree',
+      projectPath: project,
+      taskId: task.id,
+      expectedRevision: task.revision,
+      path: target,
+      branch: 'opa/test',
+      expectedHead: git('rev-parse', 'HEAD'),
+    });
+    const running = dispatch(store, command);
+    expect(running.execution?.cwd).toBe(target);
+    expect(() =>
+      executeWorktreeCommand(store, {
+        action: 'detach',
+        requestId: 'running-detach',
+        projectPath: project,
+        taskId: task.id,
+        expectedRevision: running.revision,
+      }),
+    ).toThrow('TASK_RUNNING');
+    const aliasTask = changeTask(store, {
+      action: 'create',
+      requestId: 'alias-task',
+      projectPath: target,
+      title: 'alias task',
+      assignee: 'codex',
+    });
+    expect(() =>
+      executeTaskCommand(store, {
+        action: 'start',
+        requestId: 'alias-start',
+        projectPath: target,
+        taskId: aliasTask.id,
+        expectedRevision: aliasTask.revision,
+      }),
+    ).toThrow('PROJECT_BUSY');
+    const done = await finished(store);
+    expect(done.execution?.output).toContain(target);
+    const journal = readFileSync(done.execution!.journal, 'utf8')
+      .trim()
+      .split('\n')
+      .map((s) => JSON.parse(s));
+    expect(journal.find((e) => e.type === 'session.started').cwd).toBe(target);
+    const history = historyPage(store, {
+      projectPath: project,
+      taskId: task.id,
+      runId: done.execution!.runId,
+    });
+    expect(history.entries.find((e) => e.event.type === 'session.started')?.projectPath).toBe(
+      project,
+    );
+    expect(history.entries.find((e) => e.event.type === 'session.started')?.event).toMatchObject({
+      cwd: target,
+    });
+    expect(
+      taskRunsPage(store, { projectPath: project, taskId: task.id }).runs[0].execution.worktree
+        ?.cwd,
+    ).toBe(target);
+    writeFileSync(join(target, 'keep'), 'dirty retained');
+    // A separate explicit retry can start with unchanged HEAD and preserves edits on cancel.
+    const retried = executeTaskCommand(store, {
+      action: 'start',
+      requestId: 'retry',
+      projectPath: project,
+      taskId: task.id,
+      expectedRevision: done.revision,
+    });
+    executeTaskCommand(store, {
+      action: 'update',
+      requestId: 'cancel',
+      projectPath: project,
+      taskId: task.id,
+      expectedRevision: retried.revision,
+      status: 'cancelled',
+    });
+    await vi.waitFor(() =>
+      expect(
+        opaWorkSnapshot(store).tasks.find((t) => t.id === task.id && t.projectPath === project)
+          ?.execution?.state,
+      ).not.toBe('running'),
+    );
+    expect(readFileSync(join(target, 'keep'), 'utf8')).toBe('dirty retained');
+  });
+
   it('launches once, passes prompt without shell expansion, collects result and usage', async () => {
     const { store, project, command } = setup(success);
     const running = dispatch(store, command);
