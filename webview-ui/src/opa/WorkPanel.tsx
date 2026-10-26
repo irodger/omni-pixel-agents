@@ -4,6 +4,7 @@ import type { OpaTask, OpaTaskCommand, TaskStatus } from '../../../core/src/opa/
 import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
 import type { CampusRoute } from './deepLinks.js';
+import { GitContextPanel } from './GitContextPanel.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
 import { taskError } from './taskErrors.js';
@@ -130,6 +131,14 @@ export function WorkPanel({
             t('Unassigned')}
         </p>
       </div>
+      {!selectedRunId && (
+        <GitContextPanel
+          key={task.projectPath + task.id}
+          projectPath={task.projectPath}
+          saved={task.execution?.gitContext}
+          after={task.execution?.gitContextAfter}
+        />
+      )}
       {!selectedRunId && task.execution && (
         <div className="opa-muted">
           <p>

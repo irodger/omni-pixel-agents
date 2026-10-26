@@ -83,6 +83,7 @@ components:
         - $ref: '#/components/schemas/OpaTaskRunsPage'
         - $ref: '#/components/schemas/OpaEventHistoryPage'
         - $ref: '#/components/schemas/OpaAttentionState'
+        - $ref: '#/components/schemas/OpaGitContextState'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
         # Agent lifecycle
@@ -142,6 +143,7 @@ components:
         - $ref: '#/components/schemas/OpaTaskRunsRequest'
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/OpaAttentionRequest'
+        - $ref: '#/components/schemas/OpaGitContextRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
         - $ref: '#/components/schemas/FocusAgent'
@@ -1658,6 +1660,8 @@ components:
         outputTruncated: { type: boolean }
         resultEventId: { type: string }
         state: { type: string }
+        gitContext: { $ref: '#/components/schemas/OpaGitContext' }
+        gitContextAfter: { $ref: '#/components/schemas/OpaGitContext' }
         journal: { type: string }
         permissions: { type: array, items: { $ref: '#/components/schemas/OpaPermission' } }
         startedAt: { type: number }
@@ -1822,3 +1826,44 @@ components:
     OpaAttentionOrigin:
       type: string
       enum: [task-run, task-permission, queue, ingestion, task-journal, fixture, live]
+
+    OpaGitContextRequest:
+      type: object
+      required: [type, requestId, projectPath]
+      properties:
+        type: { type: string, const: opaGitContextRequest }
+        requestId: { type: string }
+        projectPath: { type: string }
+    OpaGitContextState:
+      type: object
+      required: [type, requestId]
+      properties:
+        type: { type: string, const: opaGitContextState }
+        requestId: { type: string }
+        projectPath: { type: string }
+        context: { $ref: '#/components/schemas/OpaGitContext' }
+        error: { type: string }
+    OpaGitContext:
+      type: object
+      required: [version, observedAt, cwd, state]
+      properties:
+        version: { $ref: '#/components/schemas/OpaGitContextVersion' }
+        observedAt: { type: number }
+        cwd: { type: string }
+        state: { $ref: '#/components/schemas/OpaGitContextStatus' }
+        root: { type: string }
+        commonDir: { type: string }
+        gitDir: { type: string }
+        head: { type: string }
+        branch: { type: string }
+        detached: { type: boolean }
+        dirty: { type: boolean }
+        filtersDisabled: { type: boolean }
+        conflicted: { type: boolean }
+        submodule: { type: boolean }
+    OpaGitContextVersion:
+      type: number
+      enum: [1]
+    OpaGitContextStatus:
+      type: string
+      enum: [available, not-git, unavailable, unstable]

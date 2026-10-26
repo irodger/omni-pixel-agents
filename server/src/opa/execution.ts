@@ -14,6 +14,7 @@ import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { AcpClient } from './adapters/acpClient.js';
 import { discoverAdapters } from './adapters/registry.js';
+import { observeGitContext } from './gitContext.js';
 import { HistoryError } from './history.js';
 import { OpaOffice } from './office.js';
 import { changeTask, opaWorkSnapshot, taskQueue, updateTaskExecution, WorkError } from './work.js';
@@ -145,6 +146,7 @@ function start(
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const journal = join(directory, `${runId}.opa.jsonl`);
   appendFileSync(journal, '', { mode: 0o600 });
+  const gitContext = observeGitContext(task.projectPath);
   const startedAt = Date.now();
   const map = runs.get(store) ?? new Map();
   runs.set(store, map);
@@ -153,7 +155,7 @@ function start(
     updateTaskExecution(
       store,
       task,
-      { runId, executorId: executor.id, state: 'running', journal, startedAt },
+      { runId, executorId: executor.id, state: 'running', journal, startedAt, gitContext },
       'in_progress',
     );
   } catch (error) {
@@ -244,6 +246,7 @@ function start(
         state: 'running',
         journal,
         startedAt,
+        gitContext,
         permissions: [...permissions.values()].map((p) => p.request),
       },
       'in_progress',
@@ -370,6 +373,8 @@ function start(
               ? 'completed'
               : 'failed',
           finishedAt: Date.now(),
+          gitContext,
+          gitContextAfter: observeGitContext(task.projectPath),
           output,
           error: cancelled
             ? undefined

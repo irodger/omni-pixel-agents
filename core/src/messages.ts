@@ -14,6 +14,7 @@ export type ServerMessage =
   | OpaTaskRunsPage
   | OpaEventHistoryPage
   | OpaAttentionState
+  | OpaGitContextState
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -60,6 +61,7 @@ export type ClientMessage =
   | OpaTaskRunsRequest
   | OpaEventHistoryRequest
   | OpaAttentionRequest
+  | OpaGitContextRequest
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -158,6 +160,8 @@ export interface OpaExecution {
   outputTruncated?: boolean;
   resultEventId?: string;
   state: string;
+  gitContext?: OpaGitContext;
+  gitContextAfter?: OpaGitContext;
   journal: string;
   permissions?: OpaPermission[];
   startedAt: number;
@@ -191,6 +195,28 @@ export interface OpaCost {
 }
 
 export type OpaCostKind = 'reported' | 'estimated';
+
+export interface OpaGitContext {
+  version: OpaGitContextVersion;
+  observedAt: number;
+  cwd: string;
+  state: OpaGitContextStatus;
+  root?: string;
+  commonDir?: string;
+  gitDir?: string;
+  head?: string;
+  branch?: string;
+  detached?: boolean;
+  dirty?: boolean;
+  filtersDisabled?: boolean;
+  conflicted?: boolean;
+  submodule?: boolean;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaGitContextVersion = 1;
+
+export type OpaGitContextStatus = 'available' | 'not-git' | 'unavailable' | 'unstable';
 
 export interface OpaPermission {
   id: string;
@@ -337,6 +363,15 @@ export type OpaAttentionOrigin =
   'task-run' | 'task-permission' | 'queue' | 'ingestion' | 'task-journal' | 'fixture' | 'live';
 
 export type OpaAttentionActivity = 'recorded' | 'current' | 'resolved' | 'stale';
+
+export interface OpaGitContextState {
+  type: 'opaGitContextState';
+  requestId: string;
+  projectPath?: string;
+  context?: OpaGitContext;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -699,6 +734,13 @@ export interface OpaAttentionRequest {
   type: 'opaAttentionRequest';
   requestId: string;
   projectPath?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaGitContextRequest {
+  type: 'opaGitContextRequest';
+  requestId: string;
+  projectPath: string;
   additionalProperties?: Record<string, any>;
 }
 

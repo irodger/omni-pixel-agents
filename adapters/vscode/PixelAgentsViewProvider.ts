@@ -50,6 +50,7 @@ import {
 import { attentionReply } from '../../server/src/opa/attention.js';
 import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
+import { gitContextReply } from '../../server/src/opa/gitContext.js';
 import { historyReply } from '../../server/src/opa/history.js';
 import { saveProjectLayout } from '../../server/src/opa/projectLayouts.js';
 import { executeQueueCommand } from '../../server/src/opa/queue.js';
@@ -467,7 +468,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getWebviewContent(webviewView.webview, this.extensionUri);
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'opaAttentionRequest') {
+      if (message.type === 'opaGitContextRequest') {
+        this.webview?.postMessage(gitContextReply(this.store, message));
+      } else if (message.type === 'opaAttentionRequest') {
         this.webview?.postMessage(attentionReply(this.store, message));
       } else if (message.type === 'opaEventHistoryRequest') {
         this.webview?.postMessage(historyReply(this.store, message));
