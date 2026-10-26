@@ -29,7 +29,7 @@ Install and authenticate the chosen client separately. The task executor list sh
 - Spot permission requests, failures and unread results; answer source-agent approvals in their own client.
 - Watch a selected project in Office/Ambient, optionally full screen; Escape returns you to Campus.
 - Organize tasks as a kanban board or list. Drag or select a status without starting or stopping an agent.
-- Keep a shared task list, choose an available executor, and start it by saving a new assignment. Results, cancellation and explicit retries stay with the task.
+- Keep a shared task list, prepare an executor assignment, and launch with an explicit Start action or Start next from the local queue. Results, cancellation and explicit retries stay with the task.
 - Inspect tokens and source-reported or estimated costs by project and period. Export CSV; missing prices stay unknown.
 - Switch the interface between English and Russian. This README also has German and Spanish editions.
 - Keep using the original Pixel Agents office, editor and Claude integration.
@@ -48,9 +48,9 @@ node dist/cli.js --port 3100 --no-terminal
 
 `--no-terminal`: no embedded terminal; task execution remains available.
 
-## Before you assign a task
+## Before you start a task
 
-A new nonempty executor assignment starts a run after you save it. The task title becomes the prompt, in the selected project folder. The agent uses your existing account/model settings and may incur costs. Status changes alone and journal replay do not launch agents. One OPA task per project runs at a time. After a crash, runs require an explicit decision; they never silently resume.
+Saving a task or executor assignment is passive. Start task, Retry task and Start next task require a separate explicit confirmation. The task title becomes the prompt, in the selected project folder. The agent uses your existing account/model settings and may incur costs. Status changes alone and journal replay do not launch agents. One OPA task per project runs at a time. After a crash, runs require an explicit decision; they never silently resume. Queue pause/resume and completion never start another task. See [queue behavior and API migration](docs/opa/TASK_QUEUE.md).
 
 ## How it connects
 

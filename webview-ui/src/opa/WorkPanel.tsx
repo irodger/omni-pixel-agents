@@ -6,6 +6,7 @@ import { localeName, t, useLanguage } from '../i18n/index.js';
 import type { CampusRoute } from './deepLinks.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
+import { taskError } from './taskErrors.js';
 import { TaskHistory } from './TaskHistory.js';
 import { TaskQueuePanel } from './TaskQueuePanel.js';
 import type { UsagePeriod } from './usage.js';
@@ -473,7 +474,7 @@ export function WorkPanel({
         )}
         {error && (
           <p className="opa-error-detail" role="alert">
-            {t(error)}
+            {taskError(error, language)}
           </p>
         )}
         {success && (

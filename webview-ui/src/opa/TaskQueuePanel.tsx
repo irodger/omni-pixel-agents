@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
 import type { OpaQueueCommand } from '../../../core/src/opa/work.js';
-import { t } from '../i18n/index.js';
+import { t, useLanguage } from '../i18n/index.js';
+import { taskError } from './taskErrors.js';
 import type { useCampus } from './useCampus.js';
 
 export function TaskQueuePanel({
@@ -13,6 +14,7 @@ export function TaskQueuePanel({
   project: string | null;
   readOnly: boolean;
 }) {
+  const { language } = useLanguage();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const queue = campus.queues.find((q) => q.projectPath === project);
@@ -51,10 +53,7 @@ export function TaskQueuePanel({
         <p>{t('Choose one project to manage its queue.')}</p>
       ) : (
         <>
-          <p>
-            {t(queue?.paused ? 'Queue paused' : 'Queue ready')} · {t('Revision')}{' '}
-            {queue?.revision ?? 0}
-          </p>
+          <p>{t(queue?.paused ? 'Queue paused' : 'Queue ready')}</p>
           <button
             type="button"
             className="opa-button"
@@ -104,7 +103,7 @@ export function TaskQueuePanel({
           >
             {t('Start next task')}
           </button>
-          {error && <p role="alert">{t(error)}</p>}
+          {error && <p role="alert">{taskError(error, language)}</p>}
           {!ids.length && <p>{t('No queued tasks.')}</p>}
           <ol>
             {ids.map((id, index) => {

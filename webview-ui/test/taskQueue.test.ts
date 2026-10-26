@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { TaskQueuePanel } from '../src/opa/TaskQueuePanel.js';
 import type { useCampus } from '../src/opa/useCampus.js';
-vi.mock('../src/i18n/index.js', () => ({ t: (key: string) => key }));
+vi.mock('../src/i18n/index.js', () => ({
+  t: (key: string) => key,
+  useLanguage: () => ({ language: 'en' }),
+}));
 function fixture(patch: Record<string, unknown> = {}) {
   const saveQueue = vi.fn();
   const campus = {
