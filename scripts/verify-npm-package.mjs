@@ -7,6 +7,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 import {
+  EXPECTED_PACKAGE_NAME,
   normalizePackMetadata,
   parsePackJsonOutput,
   validatePackageFiles,
@@ -125,12 +126,15 @@ async function verifyInstalledTarball(tarballPath) {
       cwd: smokeProject,
     });
 
-    const installedRoot = path.join(smokeProject, 'node_modules', 'pixel-agents');
+    const installedRoot = path.join(smokeProject, 'node_modules', EXPECTED_PACKAGE_NAME);
     const installedManifest = JSON.parse(
       fs.readFileSync(path.join(installedRoot, 'package.json'), 'utf-8'),
     );
-    if (installedManifest.bin?.['pixel-agents'] !== './dist/cli.js') {
-      throw new Error('Installed package has an unexpected pixel-agents bin entry');
+    if (
+      installedManifest.bin?.opa !== './dist/cli.js' ||
+      installedManifest.bin?.['pixel-agents'] !== './dist/cli.js'
+    ) {
+      throw new Error('Installed package is missing the opa or pixel-agents CLI alias');
     }
 
     const installedCli = path.join(installedRoot, 'dist', 'cli.js');
@@ -143,15 +147,15 @@ async function verifyInstalledTarball(tarballPath) {
       smokeProject,
       'node_modules',
       '.bin',
-      process.platform === 'win32' ? 'pixel-agents.cmd' : 'pixel-agents',
+      process.platform === 'win32' ? 'opa.cmd' : 'opa',
     );
     const help = await execFileAsync(installedBin, ['--help'], {
       cwd: smokeProject,
       env: { ...process.env, HOME: smokeHome, USERPROFILE: smokeHome },
       shell: process.platform === 'win32',
     });
-    if (!help.stdout.includes('Usage: pixel-agents')) {
-      throw new Error('Installed pixel-agents bin did not print CLI help');
+    if (!help.stdout.includes('Usage: opa')) {
+      throw new Error('Installed opa bin did not print CLI help');
     }
 
     const port = await getFreePort();

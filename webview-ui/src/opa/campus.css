@@ -717,3 +717,62 @@
   width: 100%;
   margin: 6px 0;
 }
+
+.opa-timeline-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin: 16px 0;
+}
+.opa-timeline-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  flex: 1;
+}
+.opa-timeline-filters input,
+.opa-timeline-filters select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.opa-timeline-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.opa-timeline-list > li {
+  border: 1px solid var(--vscode-panel-border, #555);
+  padding: 16px;
+  border-radius: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.opa-timeline-selected {
+  outline: 2px solid var(--vscode-focusBorder, #8ac);
+}
+.opa-timeline-list header,
+.opa-timeline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.opa-timeline-list dl {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 3fr);
+  gap: 6px 12px;
+}
+.opa-timeline-list dd {
+  margin: 0;
+}
+.opa-timeline-excerpt {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow: auto;
+  font: inherit;
+}

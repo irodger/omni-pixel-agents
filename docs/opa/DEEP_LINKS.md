@@ -1,6 +1,6 @@
 # OPA deep links (v1)
 
-Standalone OPA supports encoded `#opa?v=1&view=overview|tasks|usage` routes. `project` is the canonical host project ID, `task` is project-scoped, and session links use all three `provider`, `session`, `agent` source identifiers. Runtime numeric character IDs are not persisted in links. Select an office/tab or use **Copy link** on a project, task or selected agent. Browser back/forward and reload preserve the selection. Unknown/missing targets and malformed/version-mismatched links show a visible notice.
+Standalone OPA supports encoded `#opa?v=1&view=overview|tasks|usage|attention|timeline` routes. `project` is the canonical host project ID, `task` is project-scoped, and session links use all three `provider`, `session`, `agent` source identifiers. Runtime numeric character IDs are not persisted in links. Select an office/tab or use **Copy link** on a project, task or selected agent. Browser back/forward and reload preserve the selection. Unknown/missing targets and malformed/version-mismatched links show a visible notice.
 
 Copy link removes every query parameter, username and password, including the management token. Recipients receive the permissions of their own browser session; copying a link never grants management access. The original management URL retains its established token behavior. Project paths are still project data; share intentionally. Embedded webviews cannot produce a usable public origin and show an explicit fallback. Routes never acknowledge results or dispatch commands; clicking an existing agent row retains its explicit read acknowledgement.
 
@@ -8,4 +8,6 @@ Copy link removes every query parameter, username and password, including the ma
 
 Verification: unit tests cover identity collision, invalid routes, encoded paths and credential removal; the dedicated `e2e/opa.config.ts` suite exercises fixture-only browser navigation. Run `npx playwright test --config e2e/opa.config.ts`; use `OPA_TEST_BROWSER_CHANNEL=chrome` for an installed Chrome. No agent/model is launched by this suite.
 
-TaskRun history (PR4, in review) adds optional `run` on a task route to select one saved attempt. Missing attempts fail visibly rather than showing the latest run instead. Hosts without this increment reject the added route field as unsupported. See [TaskRun history](TASK_RUNS.md).
+TaskRun history (PR4, delivered) adds optional `run` on a task route to select one saved attempt. Missing attempts fail visibly rather than showing the latest run instead. Hosts without this increment reject the added route field as unsupported. See [TaskRun history](TASK_RUNS.md).
+
+Timeline (PR6) adds project-scoped task/run/provider/session/event-type filters and an optional host-local event ordinal. Historical associations do not require an active session or current task projection. See [Timeline ordering, navigation and limits](TIMELINE.md).

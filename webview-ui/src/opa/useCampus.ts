@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
   OpaAgentSnapshot,
+  OpaEventHistoryPage,
+  OpaEventHistoryRequest,
   OpaProjectSnapshot,
   SaveLayout,
 } from '../../../core/src/messages.js';
@@ -42,6 +44,16 @@ export function useCampus() {
       { resolve: (page: TaskRunsPage) => void; reject: (error: Error) => void; timer: number }
     >(),
   );
+  const eventRequests = useRef(
+    new Map<
+      string,
+      {
+        resolve: (page: OpaEventHistoryPage) => void;
+        reject: (error: Error) => void;
+        timer: number;
+      }
+    >(),
+  );
   const [projects, setProjects] = useState<OpaProjectSnapshot[]>([]);
   const [seen, setSeen] = useState(readSeen);
   const [now, setNow] = useState(Date.now);
@@ -63,6 +75,15 @@ export function useCampus() {
           setTasks(message.tasks);
           setExecutors(message.executors ?? []);
           setUsage(message.usage);
+        }
+        if (message.type === 'opaEventHistoryPage') {
+          const request = eventRequests.current.get(message.requestId);
+          if (request) {
+            window.clearTimeout(request.timer);
+            eventRequests.current.delete(message.requestId);
+            if (message.error) request.reject(new Error(message.error));
+            else request.resolve(message);
+          }
         }
         if (message.type === 'opaTaskRunsPage') {
           const request = historyRequests.current.get(message.requestId);
@@ -122,6 +143,33 @@ export function useCampus() {
       }),
     [],
   );
+  useEffect(() => {
+    const requests = eventRequests.current;
+    return () => {
+      requests.forEach((r) => {
+        window.clearTimeout(r.timer);
+        r.reject(new Error('REQUEST_TIMEOUT'));
+      });
+      requests.clear();
+    };
+  }, []);
+  const requestEvents = useCallback(
+    (query: Omit<OpaEventHistoryRequest, 'type' | 'requestId'>) =>
+      new Promise<OpaEventHistoryPage>((resolve, reject) => {
+        if (transport.state !== 'connected') {
+          reject(new Error('REQUEST_TIMEOUT'));
+          return;
+        }
+        const requestId = crypto.randomUUID();
+        const timer = window.setTimeout(() => {
+          eventRequests.current.delete(requestId);
+          reject(new Error('REQUEST_TIMEOUT'));
+        }, 10000);
+        eventRequests.current.set(requestId, { resolve, reject, timer });
+        transport.send({ ...query, type: 'opaEventHistoryRequest', requestId });
+      }),
+    [],
+  );
   const saveCommand = (
     command: Omit<OpaTaskCommand, 'requestId'> | Omit<SaveLayout, 'requestId'>,
   ) =>
@@ -170,6 +218,7 @@ export function useCampus() {
   return {
     saveLayout,
     requestHistory,
+    requestEvents,
     projectsLoaded,
     workLoaded,
     projects,
