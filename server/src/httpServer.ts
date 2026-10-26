@@ -23,7 +23,7 @@ import { discoverAdapters } from './opa/adapters/registry.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { OpaOffice } from './opa/office.js';
-import { opaWorkSnapshot, WorkError } from './opa/work.js';
+import { opaWorkSnapshot, taskRunsPage, WorkError } from './opa/work.js';
 import { toPathKey } from './pathKey.js';
 import type { PtySessionManager } from './terminal/ptySessionManager.js';
 import { registerTerminalRoutes } from './terminal/terminalRoutes.js';
@@ -133,6 +133,32 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
           ? tasks.filter((t) => t.projectPath === toPathKey(request.query.projectPath!))
           : tasks,
       };
+    },
+  );
+  app.get<{ Querystring: Record<string, unknown> }>(
+    '/api/opa/task-runs',
+    { preHandler: bearerAuth(options.token) },
+    async (request, reply) => {
+      try {
+        const query = { ...request.query };
+        if (query.limit !== undefined)
+          query.limit =
+            typeof query.limit === 'string' && /^\d+$/.test(query.limit)
+              ? Number(query.limit)
+              : NaN;
+        return taskRunsPage(options.store, query);
+      } catch (error) {
+        const code = error instanceof WorkError ? error.message : 'RUNS_INVALID';
+        return reply
+          .code(
+            ['STORAGE_FAILED', 'HISTORY_UNSUPPORTED', 'HISTORY_INVALID'].includes(code)
+              ? 503
+              : ['TASK_NOT_FOUND', 'RUN_NOT_FOUND'].includes(code)
+                ? 404
+                : 400,
+          )
+          .send({ error: code });
+      }
     },
   );
   app.post<{ Body: Record<string, unknown> }>(

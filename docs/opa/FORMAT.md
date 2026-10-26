@@ -109,6 +109,10 @@ The [adapter layer](ADAPTERS.md) adds native/ACP discovery and explicit commands
 
 `saveLayout` retains its shared-office behavior without `projectPath`. With a project path it requires `expectedRevision`, accepts `requestId` and optional `reset`, and responds with `opaTaskResult` for acknowledgement/errors. `layout` remains required (use `{}` for reset). A campus project optionally carries `layout` and `layoutVersion`; absent layout means shared fallback. Reset increments the revision to prevent stale editors from resurrecting an old override. Project saves use strict adapter persistence and do not write `layout.json`.
 
-## Execution evidence and Attention Lite (planned increments in review)
+## Execution evidence and Attention Lite (delivered PR1–PR3)
 
 New local execution records may carry `executorId`, source `provider`/`sessionId`/`sourceAgentId`, recorded attempt `usage`, `outputTruncated` and `resultEventId`. These are task execution projection metadata, not additional portable OPA event types. Missing fields in legacy executions remain unknown. Exact terminal event identity supports Inbox result deduplication; permission request identity and authority do not change. See [task summary](TASK_SUMMARY.md) and [Attention Lite](ATTENTION.md).
+
+## TaskRun history (PR4, in review)
+
+The host preserves independent version-1 attempts in `opaWork.runs`, while task `execution` remains the current/latest projection. `runHistoryVersion` versions the ledger. Terminal attempts are immutable; legacy/latest records migrate conservatively and abandoned running markers become interrupted without execution or invented finish times. History excludes transient permission options. Paginated REST/observer messages retrieve metadata or one selected run's evidence; none are portable OPA command events. See [TaskRun history](TASK_RUNS.md) for schema, access, migration and limits.

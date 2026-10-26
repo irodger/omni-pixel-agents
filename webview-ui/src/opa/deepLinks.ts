@@ -5,12 +5,13 @@ export type CampusRoute = {
   view: 'overview' | 'tasks' | 'usage' | 'attention';
   project?: string;
   task?: string;
+  run?: string;
   provider?: string;
   session?: string;
   agent?: string;
 };
 export const ROOT_ROUTE: CampusRoute = { view: 'overview' };
-const fields = ['v', 'view', 'project', 'task', 'provider', 'session', 'agent'];
+const fields = ['v', 'view', 'project', 'task', 'provider', 'session', 'agent', 'run'];
 const valid = (value: string) =>
   value.length > 0 &&
   value.length <= 8192 &&
@@ -46,6 +47,7 @@ export function parseRoute(hash: string): CampusRoute | null {
   )
     return null;
   const route = Object.fromEntries([...params].filter(([key]) => key !== 'v')) as CampusRoute;
+  if (route.run && !route.task) return null;
   if ((route.task || route.session || route.provider || route.agent) && !route.project) return null;
   if (route.task && (route.view !== 'tasks' || route.session || route.provider || route.agent))
     return null;

@@ -8,26 +8,47 @@ export interface OpaTask {
   title: string;
   status: TaskStatus;
   assignee?: string;
-  execution?: {
-    runId: string;
-    executorId?: string;
-    provider?: string;
-    sessionId?: string;
-    sourceAgentId?: string;
-    usage?: OpaUsage[];
-    outputTruncated?: boolean;
-    resultEventId?: string;
-    state: string;
-    journal: string;
-    startedAt: number;
-    finishedAt?: number;
-    output?: string;
-    error?: string;
-    permissions?: PermissionRequest[];
-  };
+  execution?: TaskExecution;
   createdAt: number;
   updatedAt: number;
   revision: number;
+}
+export interface TaskExecution {
+  runId: string;
+  executorId?: string;
+  provider?: string;
+  sessionId?: string;
+  sourceAgentId?: string;
+  usage?: OpaUsage[];
+  outputTruncated?: boolean;
+  resultEventId?: string;
+  state: string;
+  journal: string;
+  startedAt: number;
+  finishedAt?: number;
+  output?: string;
+  error?: string;
+  permissions?: PermissionRequest[];
+}
+export interface OpaTaskRun {
+  version: 1;
+  projectPath: string;
+  taskId: string;
+  /** Title captured at launch, or a flagged legacy task-title snapshot. */
+  title: string;
+  titleFromLegacyTask?: boolean;
+  execution: TaskExecution;
+}
+export interface TaskRunsQuery {
+  projectPath: string;
+  taskId: string;
+  before?: string;
+  runId?: string;
+  limit?: number;
+}
+export interface TaskRunsPage {
+  runs: OpaTaskRun[];
+  nextCursor?: string;
 }
 export interface OpaUsage {
   usageId: string;
@@ -46,6 +67,8 @@ export interface OpaUsage {
   cost?: { amount: number; currency: 'USD'; kind: 'reported' | 'estimated' };
 }
 export interface OpaWorkData {
+  runHistoryVersion?: 1;
+  runs?: OpaTaskRun[];
   tasks: OpaTask[];
   usage: OpaUsage[];
 }
@@ -117,5 +140,42 @@ export function isTask(v: unknown): v is OpaTask {
     validCount(v.updatedAt) &&
     Number.isSafeInteger(v.revision) &&
     (v.revision as number) > 0
+  );
+}
+
+export function isTaskExecution(v: unknown): v is TaskExecution {
+  if (
+    !record(v) ||
+    !['runId', 'state', 'journal'].every(
+      (k) => typeof v[k] === 'string' && (v[k] as string).trim().length > 0,
+    ) ||
+    !validCount(v.startedAt)
+  )
+    return false;
+  if (v.finishedAt !== undefined && !validCount(v.finishedAt)) return false;
+  if (
+    ![
+      'executorId',
+      'provider',
+      'sessionId',
+      'sourceAgentId',
+      'output',
+      'error',
+      'resultEventId',
+    ].every((k) => v[k] === undefined || typeof v[k] === 'string')
+  )
+    return false;
+  if (v.outputTruncated !== undefined && typeof v.outputTruncated !== 'boolean') return false;
+  return v.usage === undefined || (Array.isArray(v.usage) && v.usage.every(isUsage));
+}
+export function isTaskRun(v: unknown): v is OpaTaskRun {
+  return (
+    record(v) &&
+    v.version === 1 &&
+    ['projectPath', 'taskId', 'title'].every(
+      (k) => typeof v[k] === 'string' && (v[k] as string).trim().length > 0,
+    ) &&
+    (v.titleFromLegacyTask === undefined || typeof v.titleFromLegacyTask === 'boolean') &&
+    isTaskExecution(v.execution)
   );
 }

@@ -20,11 +20,13 @@ Open **Office decor → Edit project office** to edit an isolated draft with the
 
 Project editing has no live agent characters or directory-to-area assignment controls. Those remain outside this editor; editing a room cannot assign or launch agents.
 
-## Planned local workflow backlog (2026-10-26)
+## Local workflow sequence (2026-10-26)
 
-Planning only: the PR numbers below name intended increments, not delivered features or existing implementation PRs. Reviewed against [main b0f256e](https://github.com/irodger/omni-pixel-agents/commit/b0f256ed7ba2e97550621ab12c6e951d1f62ebb0), current FORMAT/ADAPTERS and repository issues; no existing feature issues were found. ACP, Ambient, passive Kanban and project office layouts/editor are already delivered and are not repeated here. Existing latest-run results, attention projections and producer/task journals are foundations, not a complete run/event history UI.
+PR1–PR12 below label the agreed increments, not GitHub pull-request numbers. Delivery status is listed here; unfinished rows remain backlog. Reviewed against [main b0f256e](https://github.com/irodger/omni-pixel-agents/commit/b0f256ed7ba2e97550621ab12c6e951d1f62ebb0), current FORMAT/ADAPTERS and repository issues; no existing feature issues were found. ACP, Ambient, passive Kanban and project office layouts/editor are already delivered and are not repeated here. Existing latest-run results, attention projections and producer/task journals are foundations, not a complete run/event history UI.
 
-Deep Links (PR1 / #10) has an implementation prepared for review; see [usage and verification](DEEP_LINKS.md). It adds passive project/task/source-session routes and credential-free sharing; it does not change execution permissions. Task Summary (PR2 / #11) is also prepared for review; see [evidence and limits](TASK_SUMMARY.md). Attention Lite (PR3 / #12) is prepared for review; see [Inbox behavior and limits](ATTENTION.md). PR4–PR12 below remain planned.
+Deep Links (PR1 / #10) is delivered in [#23](https://github.com/irodger/omni-pixel-agents/pull/23); see [usage and verification](DEEP_LINKS.md). Task Summary (PR2 / #11) is delivered in [#24](https://github.com/irodger/omni-pixel-agents/pull/24); see [evidence and limits](TASK_SUMMARY.md). Attention Lite (PR3 / #12) is delivered in [#25](https://github.com/irodger/omni-pixel-agents/pull/25); see [Inbox behavior and limits](ATTENTION.md).
+
+TaskRun History (PR4 / #13) has an implementation prepared for review; see [storage, recovery and paginated retrieval](TASK_RUNS.md). It retains independent attempts and stable selected-run links without automatic launch/retry. PR5–PR12 below remain planned.
 
 Each linked issue contains scope, acceptance checks, migration/verification requirements and risks. S/M/L are relative complexity, not time estimates. Dependencies are prerequisites; numbering is the suggested review sequence, not a demand for a single large release.
 

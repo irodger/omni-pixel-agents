@@ -1,4 +1,41 @@
 export const ru: Record<string, string> = {
+  'Unknown attempt title': 'Название при запуске неизвестно',
+  'This saved attempt is unavailable on this host.':
+    'Сохранённая попытка недоступна на этом сервере.',
+  'This task is unavailable on this host.': 'Эта задача недоступна на этом сервере.',
+  'History changed. Refresh the list.': 'История изменилась. Обновите список.',
+  'Run history could not be read. Stored data has been kept.':
+    'Не удалось прочитать историю запусков. Сохранённые данные оставлены без изменений.',
+  'This host cannot read the saved history version.':
+    'Этот сервер не поддерживает сохранённую версию истории.',
+  'Run history could not be saved. Check host storage and try again.':
+    'Не удалось сохранить историю запусков. Проверьте хранилище сервера и повторите попытку.',
+  'Run history could not be loaded. Check the connection and try again.':
+    'Не удалось загрузить историю запусков. Проверьте подключение и повторите попытку.',
+  'Run history is unavailable.': 'История запусков недоступна.',
+
+  'Run history': 'История запусков',
+  'Refresh history': 'Обновить историю',
+  'Load older attempts': 'Загрузить более ранние попытки',
+  'No saved attempts.': 'Сохранённых попыток нет.',
+  'Loading run history…': 'Загрузка истории запусков…',
+  'Connect to load run history.': 'Подключитесь для загрузки истории запусков.',
+  'Viewing a saved attempt. Return to latest for live task controls.':
+    'Вы просматриваете сохранённую попытку. Для управления задачей вернитесь к последней.',
+  'Return to latest': 'К последней попытке',
+  'Attempt title': 'Название при запуске',
+  'Current task status': 'Текущий статус задачи',
+  'This attempt is still active. Live controls stay on the latest task.':
+    'Эта попытка ещё выполняется. Управление доступно в последней версии задачи.',
+  'Each attempt is separate. Viewing history never starts, retries or approves work.':
+    'Каждая попытка сохраняется отдельно. Просмотр истории ничего не запускает, не повторяет и не разрешает.',
+  RUNS_INVALID: 'Некорректный запрос истории запусков.',
+  RUN_NOT_FOUND: 'Этот запуск не найден. Возможно, он недоступен на данном сервере.',
+  RUNS_CURSOR_INVALID: 'Страница истории устарела. Обновите историю.',
+  HISTORY_INVALID: 'История запусков повреждена. Сохранённые данные не изменены.',
+  HISTORY_UNSUPPORTED: 'Версия истории запусков не поддерживается.',
+  RUN_FINALIZED: 'Завершённый запуск нельзя изменить.',
+
   blocked: 'Ожидает разрешения',
   error: 'Ошибка',
   done: 'Готово',

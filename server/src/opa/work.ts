@@ -1,14 +1,24 @@
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 
 import type { OpaEvent } from '../../../core/src/opa/events.js';
 import type {
   OpaTask,
   OpaTaskCommand,
+  OpaTaskRun,
   OpaUsage,
   OpaWorkData,
+  TaskExecution,
+  TaskRunsPage,
   TaskStatus,
 } from '../../../core/src/opa/work.js';
-import { isTask, isUsage, taskStatuses } from '../../../core/src/opa/work.js';
+import {
+  isTask,
+  isTaskExecution,
+  isTaskRun,
+  isUsage,
+  taskStatuses,
+} from '../../../core/src/opa/work.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { discoverAdapters } from './adapters/registry.js';
@@ -16,11 +26,71 @@ import { registerOpaProject } from './campus.js';
 import { isTaskRunning } from './execution.js';
 
 const states = new WeakMap<AgentStateStore, OpaWorkData>();
+/** History never stores transient permission options/callback state. */
+function historyExecution(execution: TaskExecution): TaskExecution {
+  const { permissions: _permissions, ...evidence } = execution;
+  void _permissions;
+  return structuredClone(evidence);
+}
+const sameEvidence = (a: unknown, b: unknown) =>
+  isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+const sameRun = (run: OpaTaskRun, projectPath: string, taskId: string, runId: string) =>
+  run.projectPath === projectPath && run.taskId === taskId && run.execution.runId === runId;
 function state(store: AgentStateStore): OpaWorkData {
   let data = states.get(store);
   if (!data) {
     const raw = store.getAdapter()?.loadOpaWork?.();
-    data = { tasks: raw?.tasks.filter(isTask) ?? [], usage: raw?.usage.filter(isUsage) ?? [] };
+    if (raw?.runHistoryVersion !== undefined && raw.runHistoryVersion !== 1)
+      throw new WorkError('HISTORY_UNSUPPORTED');
+    if (raw?.runs !== undefined && (!Array.isArray(raw.runs) || !raw.runs.every(isTaskRun)))
+      throw new WorkError('HISTORY_INVALID');
+    const runs: OpaTaskRun[] = (raw?.runs ?? []).map((run) => ({
+      ...run,
+      execution: historyExecution(
+        run.execution.state === 'running'
+          ? { ...run.execution, state: 'interrupted' }
+          : run.execution,
+      ),
+    }));
+    const identities = new Set<string>();
+    for (const run of runs) {
+      const key = JSON.stringify([run.projectPath, run.taskId, run.execution.runId]);
+      if (identities.has(key)) throw new WorkError('HISTORY_INVALID');
+      identities.add(key);
+    }
+    const tasks = (raw?.tasks ?? []).filter(isTask).map((task) => {
+      if (!task.execution) return task;
+      if (!isTaskExecution(task.execution)) throw new WorkError('HISTORY_INVALID');
+      const recorded = runs.find((run) =>
+        sameRun(run, task.projectPath, task.id, task.execution!.runId),
+      );
+      const execution =
+        recorded?.execution ??
+        historyExecution(
+          task.execution.state === 'running'
+            ? { ...task.execution, state: 'interrupted' }
+            : task.execution,
+        );
+      if (!recorded)
+        runs.push({
+          version: 1,
+          projectPath: task.projectPath,
+          taskId: task.id,
+          title: task.title,
+          titleFromLegacyTask: true,
+          execution,
+        });
+      return { ...task, execution };
+    });
+    data = { ...raw, runHistoryVersion: 1, tasks, usage: (raw?.usage ?? []).filter(isUsage), runs };
+    // Persist migration/recovery before publishing it. Never silently resume a process.
+    if (JSON.stringify(data) !== JSON.stringify(raw)) {
+      try {
+        store.getAdapter()?.saveOpaWork?.(data);
+      } catch {
+        throw new WorkError('STORAGE_FAILED');
+      }
+    }
     states.set(store, data);
   }
   return data;
@@ -157,6 +227,7 @@ export function applyWorkEvent(store: AgentStateStore, event: OpaEvent): boolean
       title: event.title.trim(),
       status: event.status,
       assignee: event.assignee?.trim() || undefined,
+      execution: previous?.execution,
       createdAt: previous?.createdAt ?? occurredAt,
       updatedAt: occurredAt,
       revision: (previous?.revision ?? 0) + 1,
@@ -189,12 +260,111 @@ export function updateTaskExecution(
       execution.state !== 'running')
   )
     return;
+  if (!isTaskExecution(execution)) throw new WorkError('TASK_INVALID');
+  const runs = data.runs ?? [];
+  const index = runs.findIndex((run) => sameRun(run, task.projectPath, task.id, execution.runId));
+  const evidence = historyExecution(execution);
+  if (index >= 0 && runs[index].execution.state !== 'running') {
+    if (sameEvidence(runs[index].execution, evidence)) return;
+    throw new WorkError('RUN_FINALIZED');
+  }
+  const run: OpaTaskRun = {
+    version: 1,
+    projectPath: task.projectPath,
+    taskId: task.id,
+    title: index < 0 ? current.title : runs[index].title,
+    titleFromLegacyTask: index < 0 ? undefined : runs[index].titleFromLegacyTask,
+    execution: evidence,
+  };
+  const nextRuns = runs.map((r) =>
+    r.projectPath === task.projectPath &&
+    r.taskId === task.id &&
+    r.execution.runId !== execution.runId &&
+    r.execution.state === 'running'
+      ? { ...r, execution: { ...r.execution, state: 'interrupted' } }
+      : r,
+  );
+  if (index < 0) nextRuns.push(run);
+  else nextRuns[index] = run;
+  if (current.execution && sameEvidence(current.execution, execution) && current.status === status)
+    return;
   save(store, {
     ...data,
+    runs: nextRuns,
     tasks: data.tasks.map((t) =>
       t === current
         ? { ...t, execution, status, updatedAt: Date.now(), revision: t.revision + 1 }
         : t,
     ),
   });
+}
+
+/** Bounded, passive retrieval. Append order is stable even when source clocks disagree. */
+export function taskRunsPage(store: AgentStateStore, raw: Record<string, unknown>): TaskRunsPage {
+  if (
+    !text(raw.projectPath, 8192) ||
+    !text(raw.taskId, 200) ||
+    (raw.limit !== undefined &&
+      (!Number.isSafeInteger(raw.limit) ||
+        (raw.limit as number) < 1 ||
+        (raw.limit as number) > 50)) ||
+    (raw.before !== undefined && !text(raw.before, 200)) ||
+    (raw.runId !== undefined && !text(raw.runId, 200)) ||
+    (raw.before !== undefined && raw.runId !== undefined)
+  )
+    throw new WorkError('RUNS_INVALID');
+  const projectPath = toPathKey(raw.projectPath);
+  const data = state(store);
+  if (!data.tasks.some((t) => t.projectPath === projectPath && t.id === raw.taskId))
+    throw new WorkError('TASK_NOT_FOUND');
+  const task = data.tasks.find((t) => t.projectPath === projectPath && t.id === raw.taskId)!;
+  let runs = (data.runs ?? [])
+    .filter((run) => run.projectPath === projectPath && run.taskId === raw.taskId)
+    .slice()
+    .reverse();
+  runs = runs.map((run) =>
+    run.execution.state === 'running' &&
+    (task.execution?.runId !== run.execution.runId || !isTaskRunning(store, task))
+      ? { ...run, execution: { ...run.execution, state: 'interrupted' } }
+      : run,
+  );
+  if (raw.runId) {
+    const run = runs.find((r) => r.execution.runId === raw.runId);
+    if (!run) throw new WorkError('RUN_NOT_FOUND');
+    return { runs: structuredClone([run]) };
+  }
+  if (raw.before) {
+    const before = runs.findIndex((r) => r.execution.runId === raw.before);
+    if (before < 0) throw new WorkError('RUNS_CURSOR_INVALID');
+    runs = runs.slice(before + 1);
+  }
+  const limit = (raw.limit as number | undefined) ?? 20;
+  const page = runs.slice(0, limit);
+  return {
+    // Lists are metadata-only; selected-run queries above return bounded result evidence.
+    runs: structuredClone(
+      page.map((run) => {
+        const execution = { ...run.execution };
+        delete execution.output;
+        delete execution.error;
+        delete execution.usage;
+        return { ...run, execution };
+      }),
+    ),
+    nextCursor: runs.length > limit ? page.at(-1)!.execution.runId : undefined,
+  };
+}
+export function taskRunsReply(store: AgentStateStore, raw: Record<string, unknown>) {
+  const requestId = text(raw.requestId, 200) ? raw.requestId : '';
+  try {
+    if (!requestId) throw new WorkError('RUNS_INVALID');
+    return { type: 'opaTaskRunsPage' as const, requestId, ...taskRunsPage(store, raw) };
+  } catch (error) {
+    return {
+      type: 'opaTaskRunsPage' as const,
+      requestId,
+      runs: [],
+      error: error instanceof WorkError ? error.message : 'RUNS_INVALID',
+    };
+  }
 }

@@ -697,3 +697,23 @@
   width: 100%;
   min-height: 120px;
 }
+
+.opa-task > .opa-run-history {
+  flex-basis: 100%;
+}
+.opa-run-history {
+  min-width: 0;
+}
+.opa-run-history details {
+  margin-top: 12px;
+}
+.opa-run-history ol {
+  padding-left: 20px;
+}
+.opa-run-button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  width: 100%;
+  margin: 6px 0;
+}

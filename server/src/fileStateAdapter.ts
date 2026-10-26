@@ -140,6 +140,7 @@ export class FileStateAdapter implements StateAdapter {
         projectLayouts: parsed.projectLayouts,
         opaWork: parsed.opaWork
           ? {
+              ...parsed.opaWork,
               tasks: Array.isArray(parsed.opaWork.tasks) ? parsed.opaWork.tasks.filter(isTask) : [],
               usage: Array.isArray(parsed.opaWork.usage)
                 ? parsed.opaWork.usage.filter(isUsage)

@@ -24,7 +24,7 @@ import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
-import { opaWorkSnapshot, WorkError } from './opa/work.js';
+import { opaWorkSnapshot, taskRunsReply, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from './providers/hook/consentGate.js';
@@ -68,8 +68,8 @@ export interface ClientMessageContext {
   onReloadAssets?: ReloadAssetsSideEffect;
   /**
    * Whether this client may change ANYTHING. An unprivileged client is
-   * read-only: it may load and watch the office (`webviewReady`) and every
-   * other message is refused at the top of handleClientMessage. Decided
+   * read-only: it may load/watch the office (`webviewReady`) and request
+   * paginated task history (`opaTaskRunsRequest`). Every other message is refused at the top of handleClientMessage. Decided
    * per-connection by the transport (wsAuth.standaloneHandshakeVerdict, or the
    * embedded Bearer token); defaults to false so a caller that forgets to pass
    * it gets the safe answer.
@@ -128,6 +128,12 @@ export function handleClientMessage(
 ): void {
   const { store, runtime, cache } = ctx;
   const adapter = store.getAdapter();
+
+  // Explicit observer query, using the same visibility as task snapshots. No commands.
+  if (msg.type === 'opaTaskRunsRequest') {
+    send(taskRunsReply(store, msg));
+    return;
+  }
 
   // Tokenless is read-only. Refused HERE, once, rather than per message, so a
   // message type added later is privileged by default instead of open until
