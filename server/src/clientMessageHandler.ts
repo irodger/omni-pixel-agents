@@ -21,6 +21,7 @@ import {
 import { collectDirectorySuggestions } from './directorySuggestions.js';
 import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
+import { attentionReply } from './opa/attention.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
 import { historyReply } from './opa/history.js';
@@ -132,6 +133,10 @@ export function handleClientMessage(
   const adapter = store.getAdapter();
 
   // Explicit observer query, using the same visibility as task snapshots. No commands.
+  if (msg.type === 'opaAttentionRequest') {
+    send(attentionReply(store, msg));
+    return;
+  }
   if (msg.type === 'opaEventHistoryRequest') {
     send(historyReply(store, msg));
     return;

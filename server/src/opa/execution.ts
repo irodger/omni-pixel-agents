@@ -233,7 +233,7 @@ function start(
     string,
     { request: PermissionRequest; resolve: (option: string | null) => void }
   >();
-  const publishPermissions = () => {
+  const publishPermissions = (resolvedPermissionId?: string) => {
     updateTaskExecution(
       store,
       task,
@@ -247,6 +247,7 @@ function start(
         permissions: [...permissions.values()].map((p) => p.request),
       },
       'in_progress',
+      resolvedPermissionId,
     );
   };
   map.set(key(task), {
@@ -257,7 +258,7 @@ function start(
         return false;
       permissions.delete(id);
       try {
-        publishPermissions();
+        publishPermissions(id);
       } catch (error) {
         permissions.set(id, permission);
         throw error;

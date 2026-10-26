@@ -13,6 +13,7 @@ export type ServerMessage =
   | OpaTaskResult
   | OpaTaskRunsPage
   | OpaEventHistoryPage
+  | OpaAttentionState
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -58,6 +59,7 @@ export type ClientMessage =
   | OpaQueueCommand
   | OpaTaskRunsRequest
   | OpaEventHistoryRequest
+  | OpaAttentionRequest
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -281,6 +283,60 @@ export interface OpaHistoryEntry {
 }
 
 export type OpaHistoryOrigin = 'ingestion' | 'task-journal' | 'fixture';
+
+export interface OpaAttentionState {
+  type: 'opaAttentionState';
+  requestId: string;
+  version?: OpaAttentionVersion;
+  hostId?: string;
+  items?: OpaAttentionItem[];
+  limited?: boolean;
+  droppedFacts?: number;
+  droppedEventsThrough?: number;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaAttentionVersion = 1;
+
+export interface OpaAttentionItem {
+  fact: OpaAttentionFact;
+  activity: OpaAttentionActivity;
+  relatedIds?: string[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaAttentionFact {
+  id: string;
+  projectPath: string;
+  kind: OpaAttentionKind;
+  title: string;
+  titleFromLegacyTask?: boolean;
+  state: string;
+  origin: OpaAttentionOrigin;
+  observedAt?: number;
+  sourceTime?: string;
+  taskId?: string;
+  runId?: string;
+  permissionId?: string;
+  provider?: string;
+  sessionId?: string;
+  agentId?: string;
+  streamId?: string;
+  eventId?: string;
+  eventOrdinal?: number;
+  relatedFactId?: string;
+  code?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaAttentionKind =
+  'blocked' | 'error' | 'result' | 'queue-error' | 'resolution' | 'check';
+
+export type OpaAttentionOrigin =
+  'task-run' | 'task-permission' | 'queue' | 'ingestion' | 'task-journal' | 'fixture' | 'live';
+
+export type OpaAttentionActivity = 'recorded' | 'current' | 'resolved' | 'stale';
 
 export interface ProviderCapabilities {
   type: 'providerCapabilities';
@@ -636,6 +692,13 @@ export interface OpaEventHistoryRequest {
   eventType?: string;
   before?: number;
   limit?: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaAttentionRequest {
+  type: 'opaAttentionRequest';
+  requestId: string;
+  projectPath?: string;
   additionalProperties?: Record<string, any>;
 }
 

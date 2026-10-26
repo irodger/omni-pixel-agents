@@ -20,6 +20,7 @@ import {
   WS_CLOSE_UNAUTHORIZED,
 } from './constants.js';
 import { discoverAdapters } from './opa/adapters/registry.js';
+import { registerAttentionRoute } from './opa/attentionRoutes.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { registerEventHistoryRoute } from './opa/historyRoutes.js';
@@ -181,6 +182,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
     },
   );
   registerQueueRoute(app, options.store, bearerAuth(options.token));
+  registerAttentionRoute(app, options.store, bearerAuth(options.token));
   const opaOffice = new OpaOffice(options.store);
   app.post('/api/opa/events', { preHandler: bearerAuth(options.token) }, async (request, reply) => {
     if (!isOpaEvent(request.body))

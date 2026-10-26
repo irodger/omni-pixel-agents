@@ -43,7 +43,6 @@ import { overlayProjection } from './office/projection.js';
 import { getPetCount } from './office/sprites/petSpriteData.js';
 import { EditTool, type OfficeLayout, TILE_SIZE } from './office/types.js';
 import { CampusPanel } from './opa/CampusPanel.js';
-import { inboxItems } from './opa/inbox.js';
 import { useCampus } from './opa/useCampus.js';
 import { isBrowserRuntime, isE2E } from './runtime.js';
 import { installTestHooks } from './testHooks.js';
@@ -736,7 +735,7 @@ function App() {
           {t('Campus ·') + ' '}
           {campus.projects.length} {' ' + t('offices')}{' '}
           <span>
-            · {inboxItems(campus.projects, campus.tasks, campus.seen).length} {' ' + t('need you')}
+            · {campus.inbox.length} {' ' + t('need you')}
           </span>
         </button>
       )}
