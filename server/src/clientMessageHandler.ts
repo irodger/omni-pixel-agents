@@ -24,6 +24,7 @@ import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { attentionReply } from './opa/attention.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
+import { gitContextReply } from './opa/gitContext.js';
 import { historyReply } from './opa/history.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
 import { executeQueueCommand } from './opa/queue.js';
@@ -72,7 +73,8 @@ export interface ClientMessageContext {
   /**
    * Whether this client may change ANYTHING. An unprivileged client is
    * read-only: it may load/watch the office (`webviewReady`) and request
-   * paginated task history (`opaTaskRunsRequest`). Every other message is refused at the top of handleClientMessage. Decided
+   * explicit task/event/attention/Git observer queries. Other messages are refused
+   * before command handling. Decided
    * per-connection by the transport (wsAuth.standaloneHandshakeVerdict, or the
    * embedded Bearer token); defaults to false so a caller that forgets to pass
    * it gets the safe answer.
@@ -133,6 +135,10 @@ export function handleClientMessage(
   const adapter = store.getAdapter();
 
   // Explicit observer query, using the same visibility as task snapshots. No commands.
+  if (msg.type === 'opaGitContextRequest') {
+    send(gitContextReply(store, msg));
+    return;
+  }
   if (msg.type === 'opaAttentionRequest') {
     send(attentionReply(store, msg));
     return;

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { OpaTask } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
+import { GitContextPanel } from './GitContextPanel.js';
 import { LinkControls } from './LinkControls.js';
 import { taskSummary } from './summaryModel.js';
 
@@ -74,6 +75,14 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
         <p className="opa-notice">
           {t('Result truncated: only the last 8000 characters were retained.')}
         </p>
+      )}
+      {historical && (
+        <GitContextPanel
+          key={run.runId}
+          projectPath={task.projectPath}
+          saved={run.gitContext}
+          after={run.gitContextAfter}
+        />
       )}
       <LinkControls
         route={{ view: 'tasks', project: task.projectPath, task: task.id, run: run.runId }}

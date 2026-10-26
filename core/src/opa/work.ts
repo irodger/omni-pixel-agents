@@ -1,5 +1,6 @@
 import type { PermissionRequest } from './adapters/types.js';
 import type { OpaAttentionFact } from './attention.js';
+import { isGitContext, type OpaGitContext } from './gitContext.js';
 
 /** Durable project work; independent of any agent process or renderer. */
 export type TaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
@@ -15,6 +16,8 @@ export interface OpaTask {
   revision: number;
 }
 export interface TaskExecution {
+  gitContext?: OpaGitContext;
+  gitContextAfter?: OpaGitContext;
   runId: string;
   executorId?: string;
   provider?: string;
@@ -172,6 +175,8 @@ export function isTaskExecution(v: unknown): v is TaskExecution {
     ].every((k) => v[k] === undefined || typeof v[k] === 'string')
   )
     return false;
+  if (v.gitContext !== undefined && !isGitContext(v.gitContext)) return false;
+  if (v.gitContextAfter !== undefined && !isGitContext(v.gitContextAfter)) return false;
   if (v.outputTruncated !== undefined && typeof v.outputTruncated !== 'boolean') return false;
   return v.usage === undefined || (Array.isArray(v.usage) && v.usage.every(isUsage));
 }

@@ -1,4 +1,36 @@
 export const ru: Record<string, string> = {
+  Available: 'Доступен',
+  Observed: 'Зафиксировано',
+  'Unknown (Git filters disabled)': 'Неизвестно (Git-фильтры отключены)',
+  'Git context': 'Контекст Git',
+  'Git context was not recorded for this attempt.': 'Контекст Git для этой попытки не записан.',
+  'Working directory': 'Рабочая папка',
+  'Not a Git worktree': 'Папка вне Git worktree',
+  'Git identity changed during observation': 'Контекст Git изменился во время чтения',
+  'Worktree root': 'Корень worktree',
+  'Git common directory': 'Общая папка Git',
+  'Git directory': 'Папка Git',
+  Branch: 'Ветка',
+  'Detached HEAD': 'HEAD без привязки к ветке',
+  'No commit recorded (unborn branch)': 'Коммитов ещё нет',
+  'Working tree changes': 'Изменения рабочей копии',
+  'Changes present': 'Есть изменения',
+  'No changes observed': 'Изменений не обнаружено',
+  Conflicts: 'Конфликты',
+  'Conflicts present': 'Есть конфликты',
+  'No conflicts observed': 'Конфликтов не обнаружено',
+  Submodule: 'Подмодуль',
+  'At launch': 'При запуске',
+  'After execution': 'После выполнения',
+  'Inspect current Git context': 'Проверить текущий контекст Git',
+  'Git context could not be refreshed. Saved observations are unchanged.':
+    'Не удалось обновить контекст Git. Сохранённые наблюдения не изменены.',
+  'Current observation': 'Текущее наблюдение',
+  'Git identity differs from the launch observation.':
+    'Контекст Git отличается от записанного при запуске.',
+  'Metadata only; file contents and submodule changes are not compared. No worktree is created or removed.':
+    'Только метаданные: содержимое файлов и изменения подмодулей не сравниваются. Worktree не создаётся и не удаляется.',
+
   'Saved facts and personal marks are separate. Reading, snoozing and dismissing never starts work or answers permissions.':
     'Сохранённые факты и личные отметки независимы. Чтение, откладывание и скрытие ничего не запускают и не разрешают.',
   'Personal marks apply to this OPA host in this browser profile. They are not shared with other users or devices.':

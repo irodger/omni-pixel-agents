@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -89,6 +89,16 @@ describe('task dispatch', () => {
     expect(done.execution?.usage?.[0].inputTokens).toBe(10);
     expect(done.execution?.usage?.[0].cost).toBeUndefined();
     expect(done.execution?.outputTruncated).toBe(false);
+    expect(done.execution?.gitContext).toMatchObject({
+      version: 1,
+      cwd: realpathSync(project),
+      state: 'unavailable',
+    });
+    expect(done.execution?.gitContextAfter).toMatchObject({
+      version: 1,
+      cwd: realpathSync(project),
+      state: 'unavailable',
+    });
     const journal = readFileSync(done.execution!.journal, 'utf8')
       .trim()
       .split('\n')
