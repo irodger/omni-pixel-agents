@@ -152,6 +152,16 @@ describe('explicit local queue', () => {
     expect(taskQueue(restarted, f.project).taskIds).toEqual(['b']);
     expect(() => executeQueueCommand(restarted, start)).toThrow('QUEUE_START_ALREADY_RECORDED');
     expect(opaWorkSnapshot(restarted).tasks.find((t) => t.id === b.id)?.execution).toBeUndefined();
+    for (let index = 0; index < 130; index++)
+      executeQueueCommand(restarted, {
+        action: index % 2 ? 'resume' : 'pause',
+        requestId: `receipt-${index}`,
+        projectPath: f.project,
+        expectedRevision: taskQueue(restarted, f.project).revision,
+      });
+    expect(taskQueue(restarted, f.project).receipts).toHaveLength(128);
+    expect(() => executeQueueCommand(restarted, start)).toThrow('QUEUE_CONFLICT');
+    expect(opaWorkSnapshot(restarted).tasks.find((t) => t.id === b.id)?.execution).toBeUndefined();
   });
   it('refuses paused, stale task, unavailable executor and bad reorder without consuming the head', () => {
     const f = fixture();
@@ -231,6 +241,9 @@ describe('explicit local queue', () => {
       privileged: false,
     });
     expect(send.mock.calls.some(([message]) => message.error === 'READ_ONLY')).toBe(true);
+    expect(() => executeQueueCommand(f.store, { ...command, action: ['pause'] })).toThrow(
+      'QUEUE_INVALID',
+    );
     expect(() => executeQueueCommand(f.store, { ...command, launch: true })).toThrow(
       'QUEUE_INVALID',
     );

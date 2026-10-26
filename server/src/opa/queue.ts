@@ -13,9 +13,8 @@ export function executeQueueCommand(store: AgentStateStore, raw: Record<string, 
     !text(raw.requestId, 200) ||
     !Number.isSafeInteger(raw.expectedRevision) ||
     (raw.expectedRevision as number) < 0 ||
-    !['enqueue', 'remove', 'reorder', 'pause', 'resume', 'start-next'].includes(
-      String(raw.action),
-    ) ||
+    typeof raw.action !== 'string' ||
+    !['enqueue', 'remove', 'reorder', 'pause', 'resume', 'start-next'].includes(raw.action) ||
     Object.keys(raw).some(
       (k) =>
         ![
