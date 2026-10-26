@@ -5,7 +5,7 @@ import * as os from 'os';
 import * as path from 'path';
 
 import type { AgentRuntime } from './agentRuntime.js';
-import type { AgentStateStore } from './agentStateStore.js';
+import { AgentStateStore } from './agentStateStore.js';
 import type {
   AssetCache,
   ReloadAssetsSideEffect,
@@ -128,14 +128,14 @@ export class PixelAgentsServer {
     const token = embedded
       ? crypto.randomUUID()
       : loadOrCreateStandaloneToken({ rotate: options?.rotateToken ?? false });
-    const store = options?.store;
+    const store = options?.store ?? new AgentStateStore();
 
     const { app, port } = await createHttpServer({
       embedded,
       host,
       port: options?.port,
       token,
-      store: store!,
+      store,
       runtime: options?.runtime,
       staticDir: options?.staticDir,
       assetCache: options?.assetCache,
