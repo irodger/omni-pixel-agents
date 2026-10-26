@@ -6,7 +6,9 @@ import { localeName, t, useLanguage } from '../i18n/index.js';
 import type { CampusRoute } from './deepLinks.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
+import { taskError } from './taskErrors.js';
 import { TaskHistory } from './TaskHistory.js';
+import { TaskQueuePanel } from './TaskQueuePanel.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
@@ -173,13 +175,18 @@ export function WorkPanel({
               className="opa-button"
               disabled={disabled || !campus.executors.some((e) => e.id === task.assignee)}
               onClick={() =>
+                window.confirm(
+                  t('Start {title} with {executor} in {project}? This may incur provider costs.', {
+                    title: task.title,
+                    executor: task.assignee ?? '',
+                    project: task.projectPath,
+                  }),
+                ) &&
                 void send({
-                  action: 'update',
+                  action: 'start',
                   projectPath: task.projectPath,
                   taskId: task.id,
                   expectedRevision: task.revision,
-                  launch: true,
-                  status: 'open',
                 })
               }
             >
@@ -191,6 +198,79 @@ export function WorkPanel({
       <TaskHistory task={task} campus={campus} selectedRunId={selectedRunId} navigate={navigate} />
       {!selectedRunId && (
         <>
+          {!task.execution && (
+            <button
+              type="button"
+              className="opa-button"
+              disabled={
+                disabled ||
+                !campus.executors.some((e) => e.id === task.assignee) ||
+                campus.queues.some(
+                  (q) => q.projectPath === task.projectPath && q.taskIds.includes(task.id),
+                )
+              }
+              onClick={() => {
+                if (
+                  window.confirm(
+                    t(
+                      'Start {title} with {executor} in {project}? This may incur provider costs.',
+                      {
+                        title: task.title,
+                        executor: task.assignee ?? '',
+                        project: task.projectPath,
+                      },
+                    ),
+                  )
+                )
+                  void send({
+                    action: 'start',
+                    projectPath: task.projectPath,
+                    taskId: task.id,
+                    expectedRevision: task.revision,
+                  });
+              }}
+            >
+              {t('Start task')}
+            </button>
+          )}
+          <button
+            type="button"
+            className="opa-button"
+            disabled={
+              disabled ||
+              task.execution?.state === 'running' ||
+              ['done', 'cancelled'].includes(task.status) ||
+              campus.queues.some(
+                (q) => q.projectPath === task.projectPath && q.taskIds.includes(task.id),
+              )
+            }
+            onClick={async () => {
+              setPending(true);
+              setError('');
+              try {
+                await campus.saveQueue({
+                  action: 'enqueue',
+                  projectPath: task.projectPath,
+                  taskId: task.id,
+                  expectedTaskRevision: task.revision,
+                  expectedRevision:
+                    campus.queues.find((q) => q.projectPath === task.projectPath)?.revision ?? 0,
+                });
+              } catch (e) {
+                setError(e instanceof Error ? e.message : 'QUEUE_INVALID');
+              } finally {
+                setPending(false);
+              }
+            }}
+          >
+            {t(
+              campus.queues.some(
+                (q) => q.projectPath === task.projectPath && q.taskIds.includes(task.id),
+              )
+                ? 'Queued'
+                : 'Add to queue',
+            )}
+          </button>
           <select
             ref={(element) => {
               const key = JSON.stringify([task.projectPath, task.id]);
@@ -239,6 +319,9 @@ export function WorkPanel({
   if (view === 'tasks')
     return (
       <section className="opa-work" aria-label={t('Tasks')}>
+        {!selectedRunId && (
+          <TaskQueuePanel campus={campus} project={projectId} readOnly={readOnly} />
+        )}
         <div className="opa-section-heading">
           <h2>{t('Tasks')}</h2>
           <div className="opa-view-tabs" aria-label={t('Task view')}>
@@ -379,7 +462,7 @@ export function WorkPanel({
             )}
             <p className="opa-muted">
               {t(
-                'Choosing an executor starts the task in its project. Agent usage may incur costs.',
+                'Saving an executor only prepares the task. Use Start task or Start next task to launch it.',
               )}
             </p>
             {!campus.executors.length && (
@@ -391,7 +474,7 @@ export function WorkPanel({
         )}
         {error && (
           <p className="opa-error-detail" role="alert">
-            {t(error)}
+            {taskError(error, language)}
           </p>
         )}
         {success && (

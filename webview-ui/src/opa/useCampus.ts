@@ -5,9 +5,11 @@ import type {
   OpaEventHistoryPage,
   OpaEventHistoryRequest,
   OpaProjectSnapshot,
+  OpaQueueState,
   SaveLayout,
 } from '../../../core/src/messages.js';
 import type {
+  OpaQueueCommand,
   OpaTask,
   OpaTaskCommand,
   OpaUsage,
@@ -33,6 +35,7 @@ export function useCampus() {
   const [executors, setExecutors] = useState<{ id: string; name: string }[]>([]);
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [workLoaded, setWorkLoaded] = useState(false);
+  const [queues, setQueues] = useState<OpaQueueState[]>([]);
   const [tasks, setTasks] = useState<OpaTask[]>([]);
   const [usage, setUsage] = useState<OpaUsage[]>([]);
   const pending = useRef(
@@ -73,6 +76,7 @@ export function useCampus() {
         if (message.type === 'opaWorkState') {
           setWorkLoaded(true);
           setTasks(message.tasks);
+          setQueues(message.queues ?? []);
           setExecutors(message.executors ?? []);
           setUsage(message.usage);
         }
@@ -171,7 +175,11 @@ export function useCampus() {
     [],
   );
   const saveCommand = (
-    command: Omit<OpaTaskCommand, 'requestId'> | Omit<SaveLayout, 'requestId'>,
+    command:
+      | Omit<OpaTaskCommand, 'requestId'>
+      | Omit<SaveLayout, 'requestId'>
+      | Omit<OpaQueueCommand, 'requestId'>,
+    type: 'opaTaskCommand' | 'opaQueueCommand' = 'opaTaskCommand',
   ) =>
     new Promise<void>((resolve, reject) => {
       if (transport.state !== 'connected') {
@@ -184,7 +192,7 @@ export function useCampus() {
         reject(new Error('REQUEST_TIMEOUT'));
       }, 10000);
       pending.current.set(requestId, { resolve, reject, timer });
-      transport.send({ type: 'opaTaskCommand', ...command, requestId });
+      transport.send({ type, ...command, requestId } as Parameters<typeof transport.send>[0]);
     });
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -231,5 +239,8 @@ export function useCampus() {
     usage,
     executors,
     saveTask,
+    queues,
+    saveQueue: (command: Omit<OpaQueueCommand, 'requestId'>) =>
+      saveCommand(command, 'opaQueueCommand'),
   };
 }

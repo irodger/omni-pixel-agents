@@ -24,6 +24,7 @@ import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { registerEventHistoryRoute } from './opa/historyRoutes.js';
 import { OpaOffice } from './opa/office.js';
+import { registerQueueRoute } from './opa/queueRoutes.js';
 import { opaWorkSnapshot, taskRunsPage, WorkError } from './opa/work.js';
 import { toPathKey } from './pathKey.js';
 import type { PtySessionManager } from './terminal/ptySessionManager.js';
@@ -179,6 +180,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
       }
     },
   );
+  registerQueueRoute(app, options.store, bearerAuth(options.token));
   const opaOffice = new OpaOffice(options.store);
   app.post('/api/opa/events', { preHandler: bearerAuth(options.token) }, async (request, reply) => {
     if (!isOpaEvent(request.body))

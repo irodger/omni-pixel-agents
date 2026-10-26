@@ -67,6 +67,8 @@ export interface OpaUsage {
   cost?: { amount: number; currency: 'USD'; kind: 'reported' | 'estimated' };
 }
 export interface OpaWorkData {
+  queueVersion?: 1;
+  queues?: OpaTaskQueue[];
   runHistoryVersion?: 1;
   runs?: OpaTaskRun[];
   tasks: OpaTask[];
@@ -75,7 +77,7 @@ export interface OpaWorkData {
 export type OpaTaskCommand = {
   requestId: string;
   projectPath: string;
-  action: 'create' | 'update' | 'permission' | 'move';
+  action: 'create' | 'update' | 'permission' | 'move' | 'start';
   taskId?: string;
   title?: string;
   status?: TaskStatus;
@@ -177,5 +179,49 @@ export function isTaskRun(v: unknown): v is OpaTaskRun {
     ) &&
     (v.titleFromLegacyTask === undefined || typeof v.titleFromLegacyTask === 'boolean') &&
     isTaskExecution(v.execution)
+  );
+}
+
+/** Per-project local queue. Reading/resuming never drains it. */
+export interface OpaTaskQueue {
+  projectPath: string;
+  revision: number;
+  paused: boolean;
+  taskIds: string[];
+  receipts: { requestId: string; fingerprint: string }[];
+}
+export interface OpaQueueCommand {
+  requestId: string;
+  projectPath: string;
+  action: 'enqueue' | 'remove' | 'reorder' | 'pause' | 'resume' | 'start-next';
+  expectedRevision: number;
+  taskId?: string;
+  taskIds?: string[];
+  expectedTaskRevision?: number;
+}
+export function isTaskQueue(v: unknown): v is OpaTaskQueue {
+  return (
+    record(v) &&
+    typeof v.projectPath === 'string' &&
+    v.projectPath.length > 0 &&
+    validCount(v.revision) &&
+    typeof v.paused === 'boolean' &&
+    Array.isArray(v.taskIds) &&
+    v.taskIds.length <= 200 &&
+    v.taskIds.every((id) => typeof id === 'string' && id.trim().length > 0 && id.length <= 200) &&
+    new Set(v.taskIds).size === v.taskIds.length &&
+    Array.isArray(v.receipts) &&
+    v.receipts.length <= 128 &&
+    new Set(v.receipts.map((r) => (record(r) ? r.requestId : undefined))).size ===
+      v.receipts.length &&
+    v.receipts.every(
+      (r) =>
+        record(r) &&
+        typeof r.requestId === 'string' &&
+        r.requestId.length > 0 &&
+        r.requestId.length <= 200 &&
+        typeof r.fingerprint === 'string' &&
+        r.fingerprint.length <= 65536,
+    )
   );
 }

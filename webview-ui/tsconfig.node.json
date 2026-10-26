@@ -8,7 +8,7 @@
     "paths": {
       "pngjs": ["./node_modules/@types/pngjs/index.d.ts"]
     },
-    "types": ["node"],
+    "types": ["node", "vite/client"],
     "skipLibCheck": true,
 
     /* Bundler mode */
