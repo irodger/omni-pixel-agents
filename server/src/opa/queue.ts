@@ -1,3 +1,4 @@
+import { attentionFactId, type OpaAttentionFact } from '../../../core/src/opa/attention.js';
 import type { OpaQueueCommand } from '../../../core/src/opa/work.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
@@ -57,6 +58,17 @@ export function executeQueueCommand(store: AgentStateStore, raw: Record<string, 
   if (queue.revision >= Number.MAX_SAFE_INTEGER) throw new WorkError('QUEUE_CAPACITY');
   const tasks = opaWorkSnapshot(store).tasks.filter((t) => t.projectPath === projectPath);
   const task = tasks.find((t) => t.id === command.taskId);
+  const failureFact = (code: string): OpaAttentionFact => ({
+    id: attentionFactId('queue', projectPath, command.requestId),
+    projectPath,
+    kind: 'queue-error',
+    title: 'Queue start request failed',
+    state: 'Start request failed',
+    origin: 'queue',
+    observedAt: Date.now(),
+    taskId: task?.id,
+    code: code.slice(0, 512),
+  });
   switch (command.action) {
     case 'enqueue':
       if (!task) throw new WorkError('TASK_NOT_FOUND');
@@ -89,14 +101,25 @@ export function executeQueueCommand(store: AgentStateStore, raw: Record<string, 
       queue.paused = false;
       break;
     case 'start-next': {
-      if (queue.paused) throw new WorkError('QUEUE_PAUSED');
-      const next = tasks.find((t) => t.id === queue.taskIds[0]);
-      if (!next) throw new WorkError(queue.taskIds.length ? 'TASK_NOT_FOUND' : 'QUEUE_EMPTY');
-      if (command.taskId !== next.id) throw new WorkError('QUEUE_CONFLICT');
-      if (['done', 'cancelled'].includes(next.status)) throw new WorkError('TASK_REOPEN_REQUIRED');
-      validateTaskStart(store, next, command.expectedTaskRevision);
-      // Commit removal and idempotency before launch. A crash cannot auto-resume/repeat this reservation.
-      queue.taskIds.shift();
+      try {
+        if (queue.paused) throw new WorkError('QUEUE_PAUSED');
+        const next = tasks.find((t) => t.id === queue.taskIds[0]);
+        if (!next) throw new WorkError(queue.taskIds.length ? 'TASK_NOT_FOUND' : 'QUEUE_EMPTY');
+        if (command.taskId !== next.id) throw new WorkError('QUEUE_CONFLICT');
+        if (['done', 'cancelled'].includes(next.status))
+          throw new WorkError('TASK_REOPEN_REQUIRED');
+        validateTaskStart(store, next, command.expectedTaskRevision);
+        // Commit removal and idempotency before launch. A crash cannot auto-resume/repeat this reservation.
+        queue.taskIds.shift();
+      } catch (error) {
+        const code = error instanceof WorkError ? error.message : 'LAUNCH_FAILED';
+        queue.revision++;
+        queue.receipts = [...queue.receipts, { requestId: command.requestId, fingerprint }].slice(
+          -128,
+        );
+        saveTaskQueue(store, queue, [failureFact(code)]);
+        throw error;
+      }
       break;
     }
   }
@@ -104,12 +127,21 @@ export function executeQueueCommand(store: AgentStateStore, raw: Record<string, 
   queue.receipts = [...queue.receipts, { requestId: command.requestId, fingerprint }].slice(-128);
   saveTaskQueue(store, queue);
   if (command.action === 'start-next') {
-    executeTaskCommand(store, {
-      action: 'start',
-      requestId: command.requestId,
-      projectPath,
-      taskId: command.taskId,
-      expectedRevision: command.expectedTaskRevision,
-    });
+    try {
+      executeTaskCommand(store, {
+        action: 'start',
+        requestId: command.requestId,
+        projectPath,
+        taskId: command.taskId,
+        expectedRevision: command.expectedTaskRevision,
+      });
+    } catch (error) {
+      const current = taskQueue(store, projectPath);
+      current.revision++;
+      saveTaskQueue(store, current, [
+        failureFact(error instanceof WorkError ? error.message : 'LAUNCH_FAILED'),
+      ]);
+      throw error;
+    }
   }
 }

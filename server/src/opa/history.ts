@@ -292,3 +292,9 @@ export function historyReply(store: AgentStateStore, raw: Record<string, unknown
     };
   }
 }
+
+/** Passive bounded metadata source for attention reconciliation. */
+export function attentionHistoryInputs(store: AgentStateStore) {
+  const data = state(store);
+  return { entries: structuredClone(data.entries), droppedThrough: data.droppedThrough };
+}

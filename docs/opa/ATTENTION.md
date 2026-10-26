@@ -1,5 +1,7 @@
 # Attention Lite (PR3, delivered in #25)
 
+For the subsequent durable Inbox, personal snooze/dismiss marks and reconciliation rules, see [Attention v2](ATTENTION_V2.md). The description below records the original PR3 baseline.
+
 The **Attention Inbox** tab unifies current source-agent blocks/errors/completions with task permission blocks and terminal run results, including failed, cancelled and interrupted runs. Project selection filters the list. Blocks come first, then errors and unread results, oldest known time first; unknown waiting times have no fabricated timer. Campus/legacy-office entry counts, the overview preview and Ambient use the same projection.
 
 Open result / Review block only navigates. **Mark read** is a separate browser-local action, available only for terminal results. It never answers an approval, starts/retries work or hides an unresolved block. Exact task/run/state keys distinguish later attempts. Read marks use the existing 2,000-entry browser preference and survive reload where local storage is available; in restricted storage they remain in memory. They are not host-wide or cross-device state (PR8).

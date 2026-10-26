@@ -39,4 +39,6 @@ Preflight verifies task/queue revision, head identity, pause, executor, project 
 
 A crash or launch/storage failure between reservation and process creation can leave the task removed but not running. This is an uncertain or failed attempt, not permission to repeat it. Inspect TaskRun history and local host/process state, then explicitly enqueue/start again with current revisions and a new human request. No automatic requeue, retry, process discovery/resume, or paid fallback is provided. If acknowledgement is lost, refresh the read model; the UI never resends execution commands on reconnect.
 
+Attention v2 also records valid Start next preflight failures as immutable metadata. The request receipt and queue revision advance atomically with the failure fact, while the head remains queued. Replaying that failed request returns `QUEUE_START_ALREADY_RECORDED`; correcting availability requires a new explicit request with refreshed revisions. Invalid/stale command identities are rejected before this recording step. Failure to persist the receipt/fact does not dispatch work. See [Attention v2](ATTENTION_V2.md).
+
 Fixtures test the command boundary with local disposable executables, not live models. Event replay and Timeline viewing have no queue dispatch path. Git worktree/cwd binding and a durable unified failure Inbox follow in later increments.

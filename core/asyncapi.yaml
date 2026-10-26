@@ -82,6 +82,7 @@ components:
         - $ref: '#/components/schemas/OpaTaskResult'
         - $ref: '#/components/schemas/OpaTaskRunsPage'
         - $ref: '#/components/schemas/OpaEventHistoryPage'
+        - $ref: '#/components/schemas/OpaAttentionState'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
         # Agent lifecycle
@@ -140,6 +141,7 @@ components:
         - $ref: '#/components/schemas/OpaQueueCommand'
         - $ref: '#/components/schemas/OpaTaskRunsRequest'
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
+        - $ref: '#/components/schemas/OpaAttentionRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
         - $ref: '#/components/schemas/FocusAgent'
@@ -1756,3 +1758,67 @@ components:
     OpaQueueAction:
       type: string
       enum: [enqueue, remove, reorder, pause, resume, start-next]
+
+    OpaAttentionRequest:
+      type: object
+      required: [type, requestId]
+      properties:
+        type: { type: string, const: opaAttentionRequest }
+        requestId: { type: string }
+        projectPath: { type: string }
+    OpaAttentionState:
+      type: object
+      required: [type, requestId]
+      properties:
+        type: { type: string, const: opaAttentionState }
+        requestId: { type: string }
+        version: { $ref: '#/components/schemas/OpaAttentionVersion' }
+        hostId: { type: string }
+        items: { type: array, items: { $ref: '#/components/schemas/OpaAttentionItem' } }
+        limited: { type: boolean }
+        droppedFacts: { type: number }
+        droppedEventsThrough: { type: number }
+        error: { type: string }
+    OpaAttentionVersion:
+      type: number
+      enum: [1]
+    OpaAttentionItem:
+      type: object
+      required: [fact, activity]
+      properties:
+        fact: { $ref: '#/components/schemas/OpaAttentionFact' }
+        activity: { $ref: '#/components/schemas/OpaAttentionActivity' }
+        relatedIds: { type: array, items: { type: string } }
+    OpaAttentionActivity:
+      type: string
+      enum: [recorded, current, resolved, stale]
+    OpaAttentionFact:
+      type: object
+      required: [id, projectPath, kind, title, state, origin]
+      properties:
+        id: { type: string }
+        projectPath: { type: string }
+        kind: { $ref: '#/components/schemas/OpaAttentionKind' }
+        title: { type: string }
+        titleFromLegacyTask: { type: boolean }
+        state: { type: string }
+        origin: { $ref: '#/components/schemas/OpaAttentionOrigin' }
+        observedAt: { type: number }
+        sourceTime: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        permissionId: { type: string }
+        provider: { type: string }
+        sessionId: { type: string }
+        agentId: { type: string }
+        streamId: { type: string }
+        eventId: { type: string }
+        eventOrdinal: { type: number }
+        relatedFactId: { type: string }
+        code: { type: string }
+    OpaAttentionKind:
+      type: string
+      enum: [blocked, error, result, queue-error, resolution, check]
+    OpaAttentionOrigin:
+      type: string
+      enum: [task-run, task-permission, queue, ingestion, task-journal, fixture, live]

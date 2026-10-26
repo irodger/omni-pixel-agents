@@ -47,6 +47,7 @@ import {
   watchLayoutFile,
   writeLayoutToFile,
 } from '../../server/src/layoutPersistence.js';
+import { attentionReply } from '../../server/src/opa/attention.js';
 import { opaCampusSnapshot } from '../../server/src/opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/execution.js';
 import { historyReply } from '../../server/src/opa/history.js';
@@ -466,7 +467,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getWebviewContent(webviewView.webview, this.extensionUri);
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'opaEventHistoryRequest') {
+      if (message.type === 'opaAttentionRequest') {
+        this.webview?.postMessage(attentionReply(this.store, message));
+      } else if (message.type === 'opaEventHistoryRequest') {
         this.webview?.postMessage(historyReply(this.store, message));
       } else if (message.type === 'opaTaskRunsRequest') {
         this.webview?.postMessage(taskRunsReply(this.store, message));

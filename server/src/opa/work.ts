@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 
+import {
+  attentionFactId,
+  isAttentionFact,
+  type OpaAttentionFact,
+} from '../../../core/src/opa/attention.js';
 import type { OpaEvent } from '../../../core/src/opa/events.js';
 import type {
   OpaTask,
@@ -55,6 +60,24 @@ function state(store: AgentStateStore): OpaWorkData {
         new Set(raw.queues.map((q) => q.projectPath)).size !== raw.queues.length)
     )
       throw new WorkError('QUEUE_HISTORY_INVALID');
+    if (raw?.attentionVersion !== undefined && raw.attentionVersion !== 1)
+      throw new WorkError('ATTENTION_VERSION_UNSUPPORTED');
+    if (raw?.attentionVersion === 1 && (!raw.attentionHostId || !Array.isArray(raw.attentionFacts)))
+      throw new WorkError('ATTENTION_INVALID');
+    if (
+      (raw?.attentionHostId !== undefined &&
+        (typeof raw.attentionHostId !== 'string' ||
+          !raw.attentionHostId ||
+          raw.attentionHostId.length > 200)) ||
+      (raw?.attentionDropped !== undefined &&
+        (!Number.isSafeInteger(raw.attentionDropped) || raw.attentionDropped < 0)) ||
+      (raw?.attentionFacts !== undefined &&
+        (!Array.isArray(raw.attentionFacts) ||
+          raw.attentionFacts.length > 2000 ||
+          !raw.attentionFacts.every(isAttentionFact) ||
+          new Set(raw.attentionFacts.map((f) => f.id)).size !== raw.attentionFacts.length))
+    )
+      throw new WorkError('ATTENTION_INVALID');
     const runs: OpaTaskRun[] = (raw?.runs ?? []).map((run) => ({
       ...run,
       execution: historyExecution(
@@ -93,7 +116,17 @@ function state(store: AgentStateStore): OpaWorkData {
         });
       return { ...task, execution };
     });
-    data = { ...raw, runHistoryVersion: 1, tasks, usage: (raw?.usage ?? []).filter(isUsage), runs };
+    data = {
+      ...raw,
+      attentionVersion: 1,
+      attentionHostId: raw?.attentionHostId ?? randomUUID(),
+      attentionFacts: raw?.attentionFacts ?? [],
+      attentionDropped: raw?.attentionDropped ?? 0,
+      runHistoryVersion: 1,
+      tasks,
+      usage: (raw?.usage ?? []).filter(isUsage),
+      runs,
+    };
     // Persist migration/recovery before publishing it. Never silently resume a process.
     if (JSON.stringify(data) !== JSON.stringify(raw)) {
       try {
@@ -265,6 +298,7 @@ export function updateTaskExecution(
   task: OpaTask,
   execution: NonNullable<OpaTask['execution']>,
   status: TaskStatus,
+  resolvedPermissionId?: string,
 ) {
   const data = state(store);
   const current = data.tasks.find((t) => t.id === task.id && t.projectPath === task.projectPath);
@@ -303,8 +337,63 @@ export function updateTaskExecution(
   else nextRuns[index] = run;
   if (current.execution && sameEvidence(current.execution, execution) && current.status === status)
     return;
+  const facts: OpaAttentionFact[] = (
+    execution.state === 'running' ? (execution.permissions ?? []) : []
+  )
+    .filter(
+      (permission) =>
+        current.execution?.runId !== execution.runId ||
+        !current.execution.permissions?.some((previous) => previous.id === permission.id),
+    )
+    .map((permission) => ({
+      id: attentionFactId('permission', task.projectPath, task.id, execution.runId, permission.id),
+      projectPath: task.projectPath,
+      kind: 'blocked',
+      title: permission.title.slice(0, 500) || 'Permission requested',
+      state: 'Needs permission',
+      origin: 'task-permission',
+      provider: execution.provider,
+      sessionId: execution.sessionId,
+      agentId: execution.sourceAgentId,
+      observedAt: Date.now(),
+      taskId: task.id,
+      runId: execution.runId,
+      permissionId: permission.id,
+    }));
+  if (resolvedPermissionId) {
+    if (
+      current.execution?.runId !== execution.runId ||
+      !current.execution.permissions?.some((p) => p.id === resolvedPermissionId)
+    )
+      throw new WorkError('PERMISSION_STALE');
+    facts.push({
+      id: attentionFactId(
+        'decision',
+        task.projectPath,
+        task.id,
+        execution.runId,
+        resolvedPermissionId,
+      ),
+      projectPath: task.projectPath,
+      kind: 'resolution',
+      title: 'Permission decision recorded',
+      state: 'Decision recorded',
+      origin: 'task-permission',
+      observedAt: Date.now(),
+      taskId: task.id,
+      runId: execution.runId,
+      permissionId: resolvedPermissionId,
+      relatedFactId: attentionFactId(
+        'permission',
+        task.projectPath,
+        task.id,
+        execution.runId,
+        resolvedPermissionId,
+      ),
+    });
+  }
   save(store, {
-    ...data,
+    ...appendAttentionFacts(data, facts),
     runs: nextRuns,
     tasks: data.tasks.map((t) =>
       t === current
@@ -396,13 +485,81 @@ export function taskQueue(store: AgentStateStore, projectPath: string): OpaTaskQ
     },
   );
 }
-export function saveTaskQueue(store: AgentStateStore, queue: OpaTaskQueue): void {
+export function saveTaskQueue(
+  store: AgentStateStore,
+  queue: OpaTaskQueue,
+  facts: OpaAttentionFact[] = [],
+): void {
   if (!isTaskQueue(queue)) throw new WorkError('QUEUE_INVALID');
   const data = state(store);
   save(store, {
-    ...data,
+    ...appendAttentionFacts(data, facts),
     queueVersion: 1,
     queues: [...(data.queues ?? []).filter((q) => q.projectPath !== queue.projectPath), queue],
   });
   registerOpaProject(store, queue.projectPath);
+}
+
+/** Facts and their originating task/queue mutation share the same atomic adapter write. */
+function appendAttentionFacts(data: OpaWorkData, facts: OpaAttentionFact[]): OpaWorkData {
+  const saved = [...(data.attentionFacts ?? [])];
+  const ids = new Set(saved.map((f) => f.id));
+  for (const fact of facts) {
+    if (!isAttentionFact(fact)) throw new WorkError('ATTENTION_INVALID');
+    if (!ids.has(fact.id)) {
+      saved.push(structuredClone(fact));
+      ids.add(fact.id);
+    }
+  }
+  const removed = Math.max(0, saved.length - 2000);
+  if (!Number.isSafeInteger((data.attentionDropped ?? 0) + removed))
+    throw new WorkError('ATTENTION_CAPACITY');
+  return {
+    ...data,
+    attentionFacts: saved.slice(-2000),
+    attentionDropped: (data.attentionDropped ?? 0) + removed,
+  };
+}
+export function attentionWorkInputs(store: AgentStateStore) {
+  const data = state(store);
+  return {
+    hostId: data.attentionHostId!,
+    tasks: data.tasks.map((task) => ({
+      id: task.id,
+      projectPath: task.projectPath,
+      execution: task.execution
+        ? {
+            runId: task.execution.runId,
+            state:
+              task.execution.state === 'running' && !isTaskRunning(store, task)
+                ? 'interrupted'
+                : task.execution.state,
+            permissions: task.execution.permissions?.map((permission) => ({
+              id: permission.id,
+              title: permission.title.slice(0, 500),
+            })),
+          }
+        : undefined,
+    })),
+    facts: structuredClone(data.attentionFacts ?? []),
+    droppedFacts: data.attentionDropped ?? 0,
+    runsLimited: (data.runs?.length ?? 0) > 2000,
+    runs: (data.runs ?? []).slice(-2000).map((run) => ({
+      version: run.version,
+      title: run.title,
+      titleFromLegacyTask: run.titleFromLegacyTask,
+      taskId: run.taskId,
+      projectPath: run.projectPath,
+      execution: {
+        runId: run.execution.runId,
+        executorId: run.execution.executorId,
+        provider: run.execution.provider,
+        sessionId: run.execution.sessionId,
+        sourceAgentId: run.execution.sourceAgentId,
+        state: run.execution.state,
+        finishedAt: run.execution.finishedAt,
+        resultEventId: run.execution.resultEventId,
+      },
+    })),
+  };
 }

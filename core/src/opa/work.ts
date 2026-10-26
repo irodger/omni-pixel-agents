@@ -1,4 +1,5 @@
 import type { PermissionRequest } from './adapters/types.js';
+import type { OpaAttentionFact } from './attention.js';
 
 /** Durable project work; independent of any agent process or renderer. */
 export type TaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
@@ -67,6 +68,10 @@ export interface OpaUsage {
   cost?: { amount: number; currency: 'USD'; kind: 'reported' | 'estimated' };
 }
 export interface OpaWorkData {
+  attentionVersion?: 1;
+  attentionHostId?: string;
+  attentionFacts?: OpaAttentionFact[];
+  attentionDropped?: number;
   queueVersion?: 1;
   queues?: OpaTaskQueue[];
   runHistoryVersion?: 1;

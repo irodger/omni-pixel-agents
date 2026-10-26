@@ -11,7 +11,6 @@ import { AmbientOffice } from './AmbientOffice.js';
 import { ATTENTION_DELAY_MS, needsAttention, waitingLabel } from './attention.js';
 import { AttentionPanel } from './AttentionPanel.js';
 import { type CampusRoute, resolveRoute, ROOT_ROUTE } from './deepLinks.js';
-import { inboxItems } from './inbox.js';
 import { LinkControls } from './LinkControls.js';
 import { ProjectCanvas } from './ProjectCanvas.js';
 import { ProjectDecor } from './ProjectDecor.js';
@@ -53,7 +52,7 @@ export function CampusPanel({
   const [agentId, setAgentId] = useState<number | null>(null);
   const view = current.view;
   const setView = (view: CampusRoute['view']) => navigate({ view, project: current.project });
-  const inbox = inboxItems(projects, campus.tasks, seen);
+  const inbox = campus.inbox;
   const agents = projects.flatMap((p) => p.agents);
   const selected = current.session
     ? projects
@@ -78,7 +77,7 @@ export function CampusPanel({
       });
     else setProjectId(project.id);
     setAgentId(agent.id);
-    acknowledge(agent);
+    acknowledge(agent, project.id);
   };
   return (
     <section className="opa-campus" aria-label={t('OPA Campus')}>
