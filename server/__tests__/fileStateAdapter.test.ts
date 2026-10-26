@@ -84,6 +84,31 @@ describe('FileStateAdapter', () => {
     expect(adapter.loadOpaWork().runs).toHaveLength(2);
   });
 
+  it('preserves event checkpoints across reload/other saves and refuses to overwrite an unreadable state file', async () => {
+    const { recordHistory, historyPage } = await import('../src/opa/history.js');
+    const adapter = new FileStateAdapter({ namespace: 'standalone' });
+    const store = new AgentStateStore();
+    store.setAdapter(adapter);
+    const source = new OpaNormalizer('codex', tempHome);
+    const start = source.normalize({ type: 'thread.started', thread_id: 'fixture-history' })[0];
+    recordHistory(store, start, { origin: 'fixture' });
+    adapter.saveSeats({ 1: { seatId: 'retained' } });
+    adapter.saveOpaWork({ tasks: [], usage: [] });
+    const restored = new AgentStateStore();
+    restored.setAdapter(new FileStateAdapter({ namespace: 'standalone' }));
+    expect(recordHistory(restored, start)).toBe(false);
+    expect(historyPage(restored, { projectPath: tempHome }).entries).toHaveLength(1);
+    const stateFile = path.join(tempHome, '.pixel-agents', 'standalone-state.json');
+    fs.writeFileSync(stateFile, '{unfinished');
+    const broken = new AgentStateStore();
+    broken.setAdapter(new FileStateAdapter({ namespace: 'standalone' }));
+    expect(() => historyPage(broken, { projectPath: tempHome })).toThrow(
+      'EVENT_HISTORY_STORAGE_FAILED',
+    );
+    adapter.saveSeats({});
+    expect(fs.readFileSync(stateFile, 'utf8')).toBe('{unfinished');
+  });
+
   it('isolates project layouts, survives restart and rejects stale edits after reset', async () => {
     const { registerOpaProject } = await import('../src/opa/campus.js');
     const { saveProjectLayout } = await import('../src/opa/projectLayouts.js');

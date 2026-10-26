@@ -23,6 +23,7 @@ import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand } from './opa/execution.js';
+import { historyReply } from './opa/history.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from './opa/work.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
@@ -130,6 +131,10 @@ export function handleClientMessage(
   const adapter = store.getAdapter();
 
   // Explicit observer query, using the same visibility as task snapshots. No commands.
+  if (msg.type === 'opaEventHistoryRequest') {
+    send(historyReply(store, msg));
+    return;
+  }
   if (msg.type === 'opaTaskRunsRequest') {
     send(taskRunsReply(store, msg));
     return;

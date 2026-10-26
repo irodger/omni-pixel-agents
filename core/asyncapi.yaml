@@ -81,6 +81,7 @@ components:
         - $ref: '#/components/schemas/OpaWorkState'
         - $ref: '#/components/schemas/OpaTaskResult'
         - $ref: '#/components/schemas/OpaTaskRunsPage'
+        - $ref: '#/components/schemas/OpaEventHistoryPage'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
         # Agent lifecycle
@@ -137,6 +138,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/OpaTaskCommand'
         - $ref: '#/components/schemas/OpaTaskRunsRequest'
+        - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
         - $ref: '#/components/schemas/FocusAgent'
@@ -1567,6 +1569,45 @@ components:
         optionId: { type: string }
         name: { type: string }
         kind: { type: string }
+    OpaHistoryOrigin:
+      type: string
+      enum: [ingestion, task-journal, fixture]
+    OpaHistoryEntry:
+      type: object
+      required: [ordinal, observedAt, projectPath, origin, event]
+      properties:
+        ordinal: { type: integer }
+        observedAt: { type: number }
+        projectPath: { type: string }
+        origin: { $ref: '#/components/schemas/OpaHistoryOrigin' }
+        taskId: { type: string }
+        runId: { type: string }
+        truncatedFields: { type: array, items: { type: string } }
+        event: { type: object, additionalProperties: true }
+    OpaEventHistoryRequest:
+      type: object
+      required: [type, requestId, projectPath]
+      properties:
+        type: { type: string, const: opaEventHistoryRequest }
+        requestId: { type: string }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        provider: { type: string }
+        sessionId: { type: string }
+        eventType: { type: string }
+        before: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 50 }
+    OpaEventHistoryPage:
+      type: object
+      required: [type, requestId, entries]
+      properties:
+        type: { type: string, const: opaEventHistoryPage }
+        requestId: { type: string }
+        entries: { type: array, items: { $ref: '#/components/schemas/OpaHistoryEntry' } }
+        nextCursor: { type: integer }
+        droppedThrough: { type: integer }
+        error: { type: string }
     OpaTaskRunVersion:
       type: integer
       enum: [1]

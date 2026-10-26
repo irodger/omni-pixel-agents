@@ -22,6 +22,7 @@ import {
 import { discoverAdapters } from './opa/adapters/registry.js';
 import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
+import { registerEventHistoryRoute } from './opa/historyRoutes.js';
 import { OpaOffice } from './opa/office.js';
 import { opaWorkSnapshot, taskRunsPage, WorkError } from './opa/work.js';
 import { toPathKey } from './pathKey.js';
@@ -135,6 +136,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
       };
     },
   );
+  registerEventHistoryRoute(app, options.store, bearerAuth(options.token));
   app.get<{ Querystring: Record<string, unknown> }>(
     '/api/opa/task-runs',
     { preHandler: bearerAuth(options.token) },

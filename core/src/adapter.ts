@@ -10,6 +10,7 @@
  * interface -- it's already host-agnostic (plain fs I/O in layoutPersistence.ts).
  */
 
+import type { OpaEventHistory } from './opa/history.js';
 import type { OpaWorkData } from './opa/work.js';
 import type { PersistedAgent } from './schemas.js';
 
@@ -29,6 +30,8 @@ export interface StateAdapter {
   /** Optional project registry for OPA campus. Contains paths, never live sessions. */
   loadOpaProjects?(): string[];
   saveOpaProjects?(paths: string[]): void;
+  loadOpaHistory?(): OpaEventHistory | undefined;
+  saveOpaHistory?(data: OpaEventHistory): void;
   loadOpaWork?(): OpaWorkData;
   saveOpaWork?(data: OpaWorkData): void;
 

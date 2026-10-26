@@ -14,6 +14,7 @@ import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { AcpClient } from './adapters/acpClient.js';
 import { discoverAdapters } from './adapters/registry.js';
+import { HistoryError } from './history.js';
 import { OpaOffice } from './office.js';
 import { changeTask, opaWorkSnapshot, updateTaskExecution, WorkError } from './work.js';
 
@@ -136,7 +137,7 @@ function start(
     map.delete(key(task));
     throw error;
   }
-  const office = new OpaOffice(store);
+  const office = new OpaOffice(store, Date.now, { origin: 'task-journal', taskId: task.id, runId });
   let failed = false,
     completed = false,
     output = '';
@@ -283,9 +284,12 @@ function start(
       const event: unknown = JSON.parse(line);
       if (acp) acp.receive(event);
       else receiveNative!(event);
-    } catch {
+    } catch (failure) {
       failed = true;
-      error = 'Invalid agent event stream or journal write failure';
+      error =
+        failure instanceof HistoryError
+          ? `Local event history could not retain observation: ${failure.message}`
+          : 'Invalid agent event stream or journal write failure';
       kill('SIGTERM');
     }
   });

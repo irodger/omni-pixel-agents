@@ -3,7 +3,13 @@ import { createAgentState } from '../agentState.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { assignPaletteIfNeeded } from '../paletteAssigner.js';
 import { opaCampusSnapshot, registerOpaProject } from './campus.js';
+import { type HistoryContext, recordHistory } from './history.js';
 import { applyWorkEvent } from './work.js';
+
+const projections = new WeakMap<
+  AgentStateStore,
+  { sessions: Map<string, number>; sequences: Map<string, number> }
+>();
 
 /** Projects portable history onto the existing office, without Claude parsers/timers. */
 export class OpaOffice {
@@ -12,10 +18,17 @@ export class OpaOffice {
   constructor(
     private store: AgentStateStore,
     private now: () => number = Date.now,
-  ) {}
+    private historyContext: HistoryContext = { origin: 'ingestion' },
+  ) {
+    const shared = projections.get(store) ?? { sessions: new Map(), sequences: new Map() };
+    projections.set(store, shared);
+    this.sessions = shared.sessions;
+    this.sequences = shared.sequences;
+  }
 
   accept(e: OpaEvent): boolean {
     if (e.type === 'usage.reported' || e.type === 'task.upserted') {
+      recordHistory(this.store, e, this.historyContext, this.now());
       const accepted = applyWorkEvent(this.store, e);
       this.store.broadcast({ ...opaCampusSnapshot(this.store) });
       return accepted;
@@ -25,6 +38,9 @@ export class OpaOffice {
     if (e.sequence <= (this.sequences.get(streamKey) ?? -1)) return false;
     let id = this.sessions.get(key);
     let agent = id === undefined ? undefined : this.store.get(id);
+    if (!agent && e.type !== 'session.started')
+      throw new Error('session.started must precede activity');
+    recordHistory(this.store, e, this.historyContext, this.now());
     if (e.type === 'session.started' && !agent) {
       registerOpaProject(this.store, e.cwd);
       id = this.store.nextAgentId.current++;

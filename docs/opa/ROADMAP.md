@@ -26,7 +26,7 @@ PR1–PR12 below label the agreed increments, not GitHub pull-request numbers. D
 
 Deep Links (PR1 / #10) is delivered in [#23](https://github.com/irodger/omni-pixel-agents/pull/23); see [usage and verification](DEEP_LINKS.md). Task Summary (PR2 / #11) is delivered in [#24](https://github.com/irodger/omni-pixel-agents/pull/24); see [evidence and limits](TASK_SUMMARY.md). Attention Lite (PR3 / #12) is delivered in [#25](https://github.com/irodger/omni-pixel-agents/pull/25); see [Inbox behavior and limits](ATTENTION.md).
 
-TaskRun History (PR4 / #13) has an implementation prepared for review; see [storage, recovery and paginated retrieval](TASK_RUNS.md). It retains independent attempts and stable selected-run links without automatic launch/retry. PR5–PR12 below remain planned.
+TaskRun History (PR4 / #13) is prepared for review in [#26](https://github.com/irodger/omni-pixel-agents/pull/26); see [storage, recovery and paginated retrieval](TASK_RUNS.md). It retains independent attempts and stable selected-run links without automatic launch/retry. Event History (PR5 / #14) is also prepared for review; see [bounded observation index, replay and export](EVENT_HISTORY.md). PR6–PR12 below remain planned.
 
 Each linked issue contains scope, acceptance checks, migration/verification requirements and risks. S/M/L are relative complexity, not time estimates. Dependencies are prerequisites; numbering is the suggested review sequence, not a demand for a single large release.
 
