@@ -355,3 +355,27 @@ describe('explicit worktree setup', () => {
     expect(resolveTaskDirectory(bound).cwd).toBe(f.target);
   });
 });
+
+// Fixture repositories must not inherit runner Git LFS or user-global filters.
+vi.mock('node:child_process', async (original) => {
+  const actual = await original<typeof import('node:child_process')>();
+  return {
+    ...actual,
+    spawnSync: ((
+      file: string,
+      args: readonly string[] = [],
+      options: import('node:child_process').SpawnSyncOptions = {},
+    ) =>
+      actual.spawnSync(file, args, {
+        ...options,
+        env:
+          file === 'git'
+            ? {
+                ...options.env,
+                GIT_CONFIG_NOSYSTEM: '1',
+                GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
+              }
+            : options.env,
+      })) as typeof actual.spawnSync,
+  };
+});
