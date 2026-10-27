@@ -213,7 +213,10 @@ async function findPixelAgentsFrameOnce(window: Page): Promise<Frame | null> {
       // count() resolves immediately (no waiting); a non-zero count means
       // this is the Pixel Agents frame.
       const buttonCount = await frame.locator('button', { hasText: '+ Agent' }).count();
-      if (buttonCount === 0) continue;
+      const campusCount = await frame
+        .getByRole('button', { name: /^(Back to office|К общему офису)$/ })
+        .count();
+      if (buttonCount === 0 && campusCount === 0) continue;
       const frameElement = await frame.frameElement();
       const box = await frameElement.boundingBox();
       await frameElement.dispose();
@@ -422,6 +425,9 @@ export async function getPixelAgentsFrame(window: Page): Promise<Frame> {
   if (!foundFrame) {
     throw new Error('Internal error: poll succeeded but foundFrame is null');
   }
+  const campusExit = foundFrame.getByRole('button', { name: /^(Back to office|К общему офису)$/ });
+  if (await campusExit.isVisible()) await campusExit.click();
+  await expect(foundFrame.locator('button', { hasText: '+ Agent' })).toBeVisible();
   return foundFrame;
 }
 

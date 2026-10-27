@@ -13,6 +13,7 @@ import { TaskQueuePanel } from './TaskQueuePanel.js';
 import type { UsagePeriod } from './usage.js';
 import { summarizeUsage, usageCsv, usageForPeriod } from './usage.js';
 import type { useCampus } from './useCampus.js';
+import { WorktreePanel } from './WorktreePanel.js';
 
 const statusLabels = {
   open: 'Open',
@@ -132,9 +133,13 @@ export function WorkPanel({
         </p>
       </div>
       {!selectedRunId && (
+        <WorktreePanel task={task} disabled={disabled} save={campus.saveWorktree} />
+      )}
+      {!selectedRunId && (
         <GitContextPanel
           key={task.projectPath + task.id}
           projectPath={task.projectPath}
+          taskId={task.id}
           saved={task.execution?.gitContext}
           after={task.execution?.gitContextAfter}
         />
@@ -188,7 +193,7 @@ export function WorkPanel({
                   t('Start {title} with {executor} in {project}? This may incur provider costs.', {
                     title: task.title,
                     executor: task.assignee ?? '',
-                    project: task.projectPath,
+                    project: task.worktree?.cwd ?? task.projectPath,
                   }),
                 ) &&
                 void send({
@@ -226,7 +231,7 @@ export function WorkPanel({
                       {
                         title: task.title,
                         executor: task.assignee ?? '',
-                        project: task.projectPath,
+                        project: task.worktree?.cwd ?? task.projectPath,
                       },
                     ),
                   )

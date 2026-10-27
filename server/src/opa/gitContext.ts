@@ -173,7 +173,19 @@ export function gitContextReply(store: AgentStateStore, raw: Record<string, unkn
       opaCampusSnapshot(store).projects.some((p) => p.id === project) ||
       attentionWorkInputs(store).tasks.some((t) => t.projectPath === project);
     if (!known) return { ...reply, error: 'PROJECT_NOT_FOUND' };
-    return { ...reply, projectPath: project, context: observeGitContext(project) };
+    const task =
+      raw.taskId === undefined
+        ? undefined
+        : attentionWorkInputs(store).tasks.find(
+            (t) => t.projectPath === project && t.id === raw.taskId,
+          );
+    if (raw.taskId !== undefined && (!task || typeof raw.taskId !== 'string'))
+      return { ...reply, error: 'TASK_NOT_FOUND' };
+    return {
+      ...reply,
+      projectPath: project,
+      context: observeGitContext(task?.worktree?.cwd ?? project),
+    };
   } catch {
     return { ...reply, error: 'GIT_CONTEXT_UNAVAILABLE' };
   }

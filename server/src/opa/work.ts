@@ -26,6 +26,7 @@ import {
   isUsage,
   taskStatuses,
 } from '../../../core/src/opa/work.js';
+import { isWorktreeBinding, type OpaWorktreeBinding } from '../../../core/src/opa/worktree.js';
 import type { AgentStateStore } from '../agentStateStore.js';
 import { toPathKey } from '../pathKey.js';
 import { discoverAdapters } from './adapters/registry.js';
@@ -92,6 +93,8 @@ function state(store: AgentStateStore): OpaWorkData {
       if (identities.has(key)) throw new WorkError('HISTORY_INVALID');
       identities.add(key);
     }
+    if ((raw?.tasks ?? []).some((t) => t?.worktree !== undefined && !isWorktreeBinding(t.worktree)))
+      throw new WorkError('WORKTREE_HISTORY_INVALID');
     const tasks = (raw?.tasks ?? []).filter(isTask).map((task) => {
       if (!task.execution) return task;
       if (!isTaskExecution(task.execution)) throw new WorkError('HISTORY_INVALID');
@@ -275,6 +278,7 @@ export function applyWorkEvent(store: AgentStateStore, event: OpaEvent): boolean
       title: event.title.trim(),
       status: event.status,
       assignee: event.assignee?.trim() || undefined,
+      worktree: previous?.worktree,
       execution: previous?.execution,
       createdAt: previous?.createdAt ?? occurredAt,
       updatedAt: occurredAt,
@@ -525,6 +529,7 @@ export function attentionWorkInputs(store: AgentStateStore) {
   return {
     hostId: data.attentionHostId!,
     tasks: data.tasks.map((task) => ({
+      worktree: task.worktree ? structuredClone(task.worktree) : undefined,
       id: task.id,
       projectPath: task.projectPath,
       execution: task.execution
@@ -562,4 +567,18 @@ export function attentionWorkInputs(store: AgentStateStore) {
       },
     })),
   };
+}
+
+export function bindTaskWorktree(
+  store: AgentStateStore,
+  task: OpaTask,
+  worktree: OpaWorktreeBinding | undefined,
+): void {
+  const data = state(store);
+  const current = data.tasks.find((t) => t.id === task.id && t.projectPath === task.projectPath);
+  if (!current || current.revision !== task.revision) throw new WorkError('TASK_CONFLICT');
+  if (current.revision >= Number.MAX_SAFE_INTEGER) throw new WorkError('TASK_CAPACITY');
+  const next = { ...current, worktree, revision: current.revision + 1, updatedAt: Date.now() };
+  if (!isTask(next)) throw new WorkError('WORKTREE_INVALID');
+  save(store, { ...data, tasks: data.tasks.map((t) => (t === current ? next : t)) });
 }

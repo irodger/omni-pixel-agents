@@ -29,7 +29,11 @@ export class OpaOffice {
   accept(e: OpaEvent): boolean {
     if (e.type === 'usage.reported' || e.type === 'task.upserted') {
       recordHistory(this.store, e, this.historyContext, this.now());
-      const accepted = applyWorkEvent(this.store, e);
+      const projected =
+        e.type === 'usage.reported' && this.historyContext.projectPath
+          ? { ...e, usage: { ...e.usage, projectPath: this.historyContext.projectPath } }
+          : e;
+      const accepted = applyWorkEvent(this.store, projected);
       this.store.broadcast({ ...opaCampusSnapshot(this.store) });
       return accepted;
     }
@@ -42,12 +46,12 @@ export class OpaOffice {
       throw new Error('session.started must precede activity');
     recordHistory(this.store, e, this.historyContext, this.now());
     if (e.type === 'session.started' && !agent) {
-      registerOpaProject(this.store, e.cwd);
+      registerOpaProject(this.store, this.historyContext.projectPath ?? e.cwd);
       id = this.store.nextAgentId.current++;
       agent = createAgentState({
         id,
         sessionId: `opa:${key}`,
-        projectDir: e.cwd,
+        projectDir: this.historyContext.projectPath ?? e.cwd,
         jsonlFile: '',
         isExternal: true,
         streamProvider: e.provider,

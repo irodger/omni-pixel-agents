@@ -29,6 +29,7 @@ import { historyReply } from './opa/history.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
 import { executeQueueCommand } from './opa/queue.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from './opa/work.js';
+import { executeWorktreeCommand } from './opa/worktree.js';
 import type { ConsentEffects } from './providers/hook/consentExecutor.js';
 import { applyConsentChoice } from './providers/hook/consentExecutor.js';
 import { hooksConsentRequest } from './providers/hook/consentGate.js';
@@ -159,6 +160,7 @@ export function handleClientMessage(
     if (
       msg.type === 'opaTaskCommand' ||
       msg.type === 'opaQueueCommand' ||
+      msg.type === 'opaWorktreeCommand' ||
       (msg.type === 'saveLayout' && msg.requestId)
     )
       send({ type: 'opaTaskResult', requestId: msg.requestId!, error: 'READ_ONLY' });
@@ -167,6 +169,18 @@ export function handleClientMessage(
   }
 
   switch (msg.type) {
+    case 'opaWorktreeCommand':
+      try {
+        executeWorktreeCommand(store, msg);
+        send({ type: 'opaTaskResult', requestId: msg.requestId });
+      } catch (error) {
+        send({
+          type: 'opaTaskResult',
+          requestId: msg.requestId,
+          error: error instanceof WorkError ? error.message : 'WORKTREE_INVALID',
+        });
+      }
+      break;
     case 'opaQueueCommand':
       try {
         executeQueueCommand(store, msg);

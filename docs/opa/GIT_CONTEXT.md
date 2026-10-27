@@ -1,5 +1,7 @@
 # Git context — PR9a
 
+See [PR9b explicit task worktrees](WORKTREES.md) for the subsequent setup and launch-binding implementation. The description below records the PR9a baseline.
+
 This is the first, read-only step of [PR9 / #18](https://github.com/irodger/omni-pixel-agents/issues/18). Explicit worktree creation/attachment, launch binding and management remain PR9b. The issue stays open until those steps and their acceptance checks are complete.
 
 New TaskRun executions capture a version-1 Git observation before starting and another after process close. These snapshots survive history/restart and do not change when a later query observes a different branch or commit. Historical attempts without evidence display “not recorded”; no past HEAD is inferred from today's repository. Interrupted recovery retains the start snapshot and does not invent a finish snapshot.

@@ -140,6 +140,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/OpaTaskCommand'
         - $ref: '#/components/schemas/OpaQueueCommand'
+        - $ref: '#/components/schemas/OpaWorktreeCommand'
         - $ref: '#/components/schemas/OpaTaskRunsRequest'
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/OpaAttentionRequest'
@@ -1660,6 +1661,8 @@ components:
         outputTruncated: { type: boolean }
         resultEventId: { type: string }
         state: { type: string }
+        cwd: { type: string }
+        worktree: { $ref: '#/components/schemas/OpaWorktreeBinding' }
         gitContext: { $ref: '#/components/schemas/OpaGitContext' }
         gitContextAfter: { $ref: '#/components/schemas/OpaGitContext' }
         journal: { type: string }
@@ -1672,6 +1675,7 @@ components:
       type: object
       required: [id, projectPath, title, status, createdAt, updatedAt, revision]
       properties:
+        worktree: { $ref: '#/components/schemas/OpaWorktreeBinding' }
         id: { type: string }
         projectPath: { type: string }
         title: { type: string }
@@ -1831,6 +1835,7 @@ components:
       type: object
       required: [type, requestId, projectPath]
       properties:
+        taskId: { type: string }
         type: { type: string, const: opaGitContextRequest }
         requestId: { type: string }
         projectPath: { type: string }
@@ -1867,3 +1872,36 @@ components:
     OpaGitContextStatus:
       type: string
       enum: [available, not-git, unavailable, unstable]
+
+    OpaWorktreeCommand:
+      type: object
+      required: [type, requestId, projectPath, taskId, expectedRevision, action]
+      properties:
+        type: { type: string, const: opaWorktreeCommand }
+        requestId: { type: string }
+        projectPath: { type: string }
+        taskId: { type: string }
+        expectedRevision: { type: number }
+        action: { $ref: '#/components/schemas/OpaWorktreeAction' }
+        path: { type: string }
+        branch: { type: string }
+        expectedHead: { type: string }
+    OpaWorktreeAction:
+      type: string
+      enum: [create, attach, detach]
+    OpaWorktreeBinding:
+      type: object
+      required: [version, cwd, sourceCwd, sourceRoot, commonDir, gitDir, baseCommit, created]
+      properties:
+        version: { $ref: '#/components/schemas/OpaWorktreeVersion' }
+        cwd: { type: string }
+        sourceCwd: { type: string }
+        sourceRoot: { type: string }
+        commonDir: { type: string }
+        gitDir: { type: string }
+        baseCommit: { type: string }
+        branch: { type: string }
+        created: { type: boolean }
+    OpaWorktreeVersion:
+      type: number
+      enum: [1]

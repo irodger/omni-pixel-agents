@@ -60,8 +60,12 @@ export function GitContextPanel({
   projectPath,
   saved,
   after,
+  taskId,
+  allowRefresh = true,
 }: {
   projectPath: string;
+  taskId?: string;
+  allowRefresh?: boolean;
   saved?: OpaGitContext;
   after?: OpaGitContext;
 }) {
@@ -107,25 +111,27 @@ export function GitContextPanel({
           <GitObservation context={after} />
         </>
       )}
-      <button
-        type="button"
-        className="opa-button"
-        disabled={pending || transport.state !== 'connected'}
-        onClick={() => {
-          const id = `git-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-          const timer = setTimeout(() => {
-            request.current = undefined;
-            setPending(false);
-            setError(true);
-          }, 15000);
-          request.current = { id, project: projectPath, timer };
-          setPending(true);
-          setError(false);
-          transport.send({ type: 'opaGitContextRequest', requestId: id, projectPath });
-        }}
-      >
-        {t('Inspect current Git context')}
-      </button>
+      {allowRefresh && (
+        <button
+          type="button"
+          className="opa-button"
+          disabled={pending || transport.state !== 'connected'}
+          onClick={() => {
+            const id = `git-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const timer = setTimeout(() => {
+              request.current = undefined;
+              setPending(false);
+              setError(true);
+            }, 15000);
+            request.current = { id, project: projectPath, timer };
+            setPending(true);
+            setError(false);
+            transport.send({ type: 'opaGitContextRequest', requestId: id, projectPath, taskId });
+          }}
+        >
+          {t('Inspect current Git context')}
+        </button>
+      )}
       {error && (
         <p role="status">
           {t('Git context could not be refreshed. Saved observations are unchanged.')}

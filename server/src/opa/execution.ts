@@ -18,13 +18,23 @@ import { observeGitContext } from './gitContext.js';
 import { HistoryError } from './history.js';
 import { OpaOffice } from './office.js';
 import { changeTask, opaWorkSnapshot, taskQueue, updateTaskExecution, WorkError } from './work.js';
+import { resolveTaskDirectory } from './worktree.js';
 
 export function availableExecutors() {
   return discoverAdapters().executors;
 }
 const runs = new WeakMap<
   AgentStateStore,
-  Map<string, { runId: string; stop: () => void; decide?: (id: string, option: string) => boolean }>
+  Map<
+    string,
+    {
+      runId: string;
+      projectCwd: string;
+      repoId?: string;
+      stop: () => void;
+      decide?: (id: string, option: string) => boolean;
+    }
+  >
 >();
 const key = (task: OpaTask) => JSON.stringify([task.projectPath, task.id]);
 export function executeTaskCommand(store: AgentStateStore, raw: Record<string, unknown>): OpaTask {
@@ -120,6 +130,17 @@ export function validateTaskStart(
 ) {
   if (expectedRevision !== task.revision) throw new WorkError('TASK_CONFLICT');
   if (isTaskRunning(store, task)) throw new WorkError('TASK_RUNNING');
+  const directory = resolveTaskDirectory(task);
+  if (
+    [...(runs.get(store)?.values() ?? [])].some(
+      (owner) =>
+        toPathKey(owner.projectCwd) === toPathKey(directory.projectCwd) ||
+        (owner.repoId &&
+          directory.gitContext.commonDir &&
+          toPathKey(owner.repoId) === toPathKey(directory.gitContext.commonDir)),
+    )
+  )
+    throw new WorkError('PROJECT_BUSY');
   const executor = availableExecutors().find((e) => e.id === task.assignee);
   if (!executor) throw new WorkError('EXECUTOR_UNAVAILABLE');
   try {
@@ -141,28 +162,46 @@ function start(
   task: OpaTask,
   executor: ReturnType<typeof availableExecutors>[number],
 ) {
+  const resolved = resolveTaskDirectory(task);
+  const cwd = resolved.cwd;
+  const worktree = resolved.worktree;
+  const projectCwd = resolved.projectCwd;
   const runId = randomUUID();
   const directory = join(homedir(), '.pixel-agents', 'opa-runs');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const journal = join(directory, `${runId}.opa.jsonl`);
   appendFileSync(journal, '', { mode: 0o600 });
-  const gitContext = observeGitContext(task.projectPath);
+  const gitContext = resolved.gitContext;
   const startedAt = Date.now();
   const map = runs.get(store) ?? new Map();
   runs.set(store, map);
-  map.set(key(task), { runId, stop: () => {} });
+  map.set(key(task), { runId, projectCwd, repoId: gitContext.commonDir, stop: () => {} });
   try {
     updateTaskExecution(
       store,
       task,
-      { runId, executorId: executor.id, state: 'running', journal, startedAt, gitContext },
+      {
+        runId,
+        executorId: executor.id,
+        state: 'running',
+        journal,
+        startedAt,
+        gitContext,
+        cwd,
+        worktree,
+      },
       'in_progress',
     );
   } catch (error) {
     map.delete(key(task));
     throw error;
   }
-  const office = new OpaOffice(store, Date.now, { origin: 'task-journal', taskId: task.id, runId });
+  const office = new OpaOffice(store, Date.now, {
+    origin: 'task-journal',
+    taskId: task.id,
+    runId,
+    projectPath: task.projectPath,
+  });
   let failed = false,
     completed = false,
     output = '';
@@ -214,7 +253,7 @@ function start(
   delete env.OPA_LOG;
   const child = spawn(executor.executable, args, {
     env,
-    cwd: task.projectPath,
+    cwd,
     shell: false,
     detached: process.platform !== 'win32',
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -247,6 +286,8 @@ function start(
         journal,
         startedAt,
         gitContext,
+        cwd,
+        worktree,
         permissions: [...permissions.values()].map((p) => p.request),
       },
       'in_progress',
@@ -255,6 +296,8 @@ function start(
   };
   map.set(key(task), {
     runId,
+    projectCwd,
+    repoId: gitContext.commonDir,
     decide: (id: string, option: string) => {
       const permission = permissions.get(id);
       if (!permission || !permission.request.options.some((o) => o.optionId === option))
@@ -296,13 +339,13 @@ function start(
       }),
   };
   const receiveNative =
-    executor.transport === 'native-jsonl' ? native!.stream(task.projectPath, hooks) : undefined;
+    executor.transport === 'native-jsonl' ? native!.stream(cwd, hooks) : undefined;
   if (executor.transport === 'acp-stdio')
     acp = new AcpClient(
       (message) => child.stdin.write(JSON.stringify(message) + '\n'),
       hooks,
       executor.provider,
-      task.projectPath,
+      cwd,
     );
   const lines = createInterface({ input: child.stdout });
   lines.on('line', (line) => {
@@ -374,7 +417,9 @@ function start(
               : 'failed',
           finishedAt: Date.now(),
           gitContext,
-          gitContextAfter: observeGitContext(task.projectPath),
+          cwd,
+          worktree,
+          gitContextAfter: observeGitContext(cwd),
           output,
           error: cancelled
             ? undefined

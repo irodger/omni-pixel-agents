@@ -58,6 +58,7 @@ export type ServerMessage =
 export type ClientMessage =
   | OpaTaskCommand
   | OpaQueueCommand
+  | OpaWorktreeCommand
   | OpaTaskRunsRequest
   | OpaEventHistoryRequest
   | OpaAttentionRequest
@@ -136,6 +137,7 @@ export interface OpaWorkState {
 }
 
 export interface OpaTaskRecord {
+  worktree?: OpaWorktreeBinding;
   id: string;
   projectPath: string;
   title: string;
@@ -147,6 +149,21 @@ export interface OpaTaskRecord {
   revision: number;
   additionalProperties?: Record<string, any>;
 }
+
+export interface OpaWorktreeBinding {
+  version: OpaWorktreeVersion;
+  cwd: string;
+  sourceCwd: string;
+  sourceRoot: string;
+  commonDir: string;
+  gitDir: string;
+  baseCommit: string;
+  branch?: string;
+  created: boolean;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaWorktreeVersion = 1;
 
 export type OpaTaskStatus = 'open' | 'in_progress' | 'done' | 'cancelled';
 
@@ -160,6 +177,8 @@ export interface OpaExecution {
   outputTruncated?: boolean;
   resultEventId?: string;
   state: string;
+  cwd?: string;
+  worktree?: OpaWorktreeBinding;
   gitContext?: OpaGitContext;
   gitContextAfter?: OpaGitContext;
   journal: string;
@@ -705,6 +724,21 @@ export interface OpaQueueCommand {
 
 export type OpaQueueAction = 'enqueue' | 'remove' | 'reorder' | 'pause' | 'resume' | 'start-next';
 
+export interface OpaWorktreeCommand {
+  type: 'opaWorktreeCommand';
+  requestId: string;
+  projectPath: string;
+  taskId: string;
+  expectedRevision: number;
+  action: OpaWorktreeAction;
+  path?: string;
+  branch?: string;
+  expectedHead?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaWorktreeAction = 'create' | 'attach' | 'detach';
+
 export interface OpaTaskRunsRequest {
   type: 'opaTaskRunsRequest';
   requestId: string;
@@ -738,6 +772,7 @@ export interface OpaAttentionRequest {
 }
 
 export interface OpaGitContextRequest {
+  taskId?: string;
   type: 'opaGitContextRequest';
   requestId: string;
   projectPath: string;

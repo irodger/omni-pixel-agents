@@ -280,6 +280,8 @@ async function waitForPrintedUrl(readOutput: () => string): Promise<string> {
 /** Open the SPA the way the operator does: by pasting in the URL the CLI printed. */
 async function openStandalonePage(page: Page, printedUrl: string): Promise<void> {
   await page.goto(printedUrl);
+  // Legacy-office specs explicitly leave the new Campus entry screen.
+  await page.getByRole('button', { name: /^(Back to office|К общему офису)$/ }).click();
   await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible({ timeout: 30_000 });
 }
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import type { OpaTask } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
+import { vscodeProjectLink } from './deepLinks.js';
 import { GitContextPanel } from './GitContextPanel.js';
 import { LinkControls } from './LinkControls.js';
 import { taskSummary } from './summaryModel.js';
@@ -13,9 +14,10 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
   const summary = taskSummary(task);
   if (!summary || summary.run.state === 'running') return null;
   const { run, started, finished, duration, usage } = summary;
+  const ide = run.cwd ? vscodeProjectLink(run.cwd) : null;
   const date = (n: number | undefined) =>
     n === undefined ? t('Unknown') : new Date(n).toLocaleString(localeName(language));
-  const text = `${task.title}\n${t('Execution')}: ${t(run.state)}\n${t('Run ID')}: ${run.runId}\n${t('Executor')}: ${run.executorId ?? t('Unknown')}\n${t('Started')}: ${date(started)}\n${t('Finished')}: ${date(finished)}\n${t('Project')}: ${task.projectPath}\n\n${run.error ?? ''}\n${run.output ?? ''}`;
+  const text = `${task.title}\n${t('Execution')}: ${t(run.state)}\n${t('Run ID')}: ${run.runId}\n${t('Executor')}: ${run.executorId ?? t('Unknown')}\n${t('Started')}: ${date(started)}\n${t('Finished')}: ${date(finished)}\n${t('Project')}: ${task.projectPath}\n${t('Working directory')}: ${run.cwd ?? t('Unknown')}\n\n${run.error ?? ''}\n${run.output ?? ''}`;
   return (
     <section className="opa-task-summary" aria-label={`${t('Task summary')}: ${task.title}`}>
       <h4>{t('Task summary')}</h4>
@@ -30,6 +32,8 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
             ],
           )}
         </dd>
+        <dt>{t('Working directory')}</dt>
+        <dd>{run.cwd ?? t('Unknown')}</dd>
         <dt>{t('Run ID')}</dt>
         <dd>{run.runId}</dd>
         <dt>{t('Executor')}</dt>
@@ -80,9 +84,15 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
         <GitContextPanel
           key={run.runId}
           projectPath={task.projectPath}
+          allowRefresh={false}
           saved={run.gitContext}
           after={run.gitContextAfter}
         />
+      )}
+      {ide && (
+        <a className="opa-button" href={ide}>
+          {t('Open working directory in VS Code')}
+        </a>
       )}
       <LinkControls
         route={{ view: 'tasks', project: task.projectPath, task: task.id, run: run.runId }}
