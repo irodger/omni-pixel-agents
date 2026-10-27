@@ -84,6 +84,7 @@ components:
         - $ref: '#/components/schemas/OpaEventHistoryPage'
         - $ref: '#/components/schemas/OpaAttentionState'
         - $ref: '#/components/schemas/OpaGitContextState'
+        - $ref: '#/components/schemas/OpaDiffState'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
         # Agent lifecycle
@@ -145,6 +146,7 @@ components:
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/OpaAttentionRequest'
         - $ref: '#/components/schemas/OpaGitContextRequest'
+        - $ref: '#/components/schemas/OpaDiffRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
         - $ref: '#/components/schemas/FocusAgent'
@@ -1905,3 +1907,61 @@ components:
     OpaWorktreeVersion:
       type: number
       enum: [1]
+
+    OpaDiffRequest:
+      type: object
+      required: [type, requestId, projectPath, taskId, runId, mode]
+      properties:
+        type: { type: string, const: opaDiffRequest }
+        requestId: { type: string }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        mode: { $ref: '#/components/schemas/OpaDiffMode' }
+        path: { type: string }
+        expectedSnapshot: { type: string }
+    OpaDiffState:
+      type: object
+      required: [type, requestId]
+      properties:
+        type: { type: string, const: opaDiffState }
+        requestId: { type: string }
+        result: { $ref: '#/components/schemas/OpaDiffSnapshot' }
+        error: { type: string }
+    OpaDiffMode:
+      type: string
+      enum: [committed, working]
+    OpaDiffSnapshot:
+      type: object
+      required: [version, projectPath, taskId, runId, mode, cwd, base, head, observedHead, observedAt, snapshot, stale, filtersDisabled, historicalDirtyUnavailable, limited, files]
+      properties:
+        version: { type: number }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        mode: { $ref: '#/components/schemas/OpaDiffMode' }
+        cwd: { type: string }
+        base: { type: string }
+        head: { type: string }
+        observedHead: { type: string }
+        observedAt: { type: number }
+        snapshot: { type: string }
+        stale: { type: boolean }
+        filtersDisabled: { type: boolean }
+        historicalDirtyUnavailable: { type: boolean }
+        limited: { type: boolean }
+        files: { type: array, items: { $ref: '#/components/schemas/OpaDiffFile' } }
+        path: { type: string }
+        patch: { type: string }
+        truncated: { type: boolean }
+    OpaDiffFile:
+      type: object
+      required: [path, binary]
+      properties:
+        path: { type: string }
+        oldPath: { type: string }
+        added: { type: number }
+        deleted: { type: number }
+        binary: { type: boolean }
+        untracked: { type: boolean }
+        openPath: { type: string }

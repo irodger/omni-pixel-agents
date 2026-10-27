@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { OpaTask } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
 import { vscodeProjectLink } from './deepLinks.js';
+import { DiffPanel } from './DiffPanel.js';
 import { GitContextPanel } from './GitContextPanel.js';
 import { LinkControls } from './LinkControls.js';
 import { taskSummary } from './summaryModel.js';
@@ -64,7 +65,7 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
         )}
       </p>
       <p className="opa-muted">
-        {t('Git diff, quality checks and artifacts: not recorded in this increment.')}
+        {t('Quality checks and artifacts: not recorded in this increment.')}
       </p>
       {run.error && <p className="opa-error-detail">{run.error}</p>}
       {run.output ? (
@@ -79,6 +80,14 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
         <p className="opa-notice">
           {t('Result truncated: only the last 8000 characters were retained.')}
         </p>
+      )}
+      {historical && (
+        <DiffPanel
+          key={run.runId + '-diff'}
+          projectPath={task.projectPath}
+          taskId={task.id}
+          runId={run.runId}
+        />
       )}
       {historical && (
         <GitContextPanel
