@@ -15,6 +15,7 @@ export type ServerMessage =
   | OpaEventHistoryPage
   | OpaAttentionState
   | OpaGitContextState
+  | OpaDiffState
   | ProviderCapabilities
   | AgentCreated
   | AgentClosed
@@ -63,6 +64,7 @@ export type ClientMessage =
   | OpaEventHistoryRequest
   | OpaAttentionRequest
   | OpaGitContextRequest
+  | OpaDiffRequest
   | WebviewReady
   | LaunchAgent
   | FocusAgent
@@ -389,6 +391,50 @@ export interface OpaGitContextState {
   projectPath?: string;
   context?: OpaGitContext;
   error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaDiffState {
+  type: 'opaDiffState';
+  requestId: string;
+  result?: OpaDiffSnapshot;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaDiffSnapshot {
+  version: number;
+  projectPath: string;
+  taskId: string;
+  runId: string;
+  mode: OpaDiffMode;
+  cwd: string;
+  base: string;
+  head: string;
+  observedHead: string;
+  observedAt: number;
+  snapshot: string;
+  stale: boolean;
+  filtersDisabled: boolean;
+  historicalDirtyUnavailable: boolean;
+  limited: boolean;
+  files: OpaDiffFile[];
+  path?: string;
+  patch?: string;
+  truncated?: boolean;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaDiffMode = 'committed' | 'working';
+
+export interface OpaDiffFile {
+  path: string;
+  oldPath?: string;
+  added?: number;
+  deleted?: number;
+  binary: boolean;
+  untracked?: boolean;
+  openPath?: string;
   additionalProperties?: Record<string, any>;
 }
 
@@ -776,6 +822,18 @@ export interface OpaGitContextRequest {
   type: 'opaGitContextRequest';
   requestId: string;
   projectPath: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaDiffRequest {
+  type: 'opaDiffRequest';
+  requestId: string;
+  projectPath: string;
+  taskId: string;
+  runId: string;
+  mode: OpaDiffMode;
+  path?: string;
+  expectedSnapshot?: string;
   additionalProperties?: Record<string, any>;
 }
 

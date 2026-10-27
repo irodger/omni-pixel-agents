@@ -4,6 +4,7 @@ import type { OpaTask, OpaTaskCommand, TaskStatus } from '../../../core/src/opa/
 import { taskStatuses } from '../../../core/src/opa/work.js';
 import { localeName, t, useLanguage } from '../i18n/index.js';
 import type { CampusRoute } from './deepLinks.js';
+import { DiffPanel } from './DiffPanel.js';
 import { GitContextPanel } from './GitContextPanel.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
@@ -142,6 +143,14 @@ export function WorkPanel({
           taskId={task.id}
           saved={task.execution?.gitContext}
           after={task.execution?.gitContextAfter}
+        />
+      )}
+      {!selectedRunId && task.execution && (
+        <DiffPanel
+          key={task.execution.runId}
+          projectPath={task.projectPath}
+          taskId={task.id}
+          runId={task.execution.runId}
         />
       )}
       {!selectedRunId && task.execution && (

@@ -23,6 +23,7 @@ import { hostDirectory } from './hostDirectory.js';
 import { readLayoutFromFile, writeLayoutToFile } from './layoutPersistence.js';
 import { attentionReply } from './opa/attention.js';
 import { opaCampusSnapshot } from './opa/campus.js';
+import { diffReply } from './opa/diff.js';
 import { executeTaskCommand } from './opa/execution.js';
 import { gitContextReply } from './opa/gitContext.js';
 import { historyReply } from './opa/history.js';
@@ -164,11 +165,16 @@ export function handleClientMessage(
       (msg.type === 'saveLayout' && msg.requestId)
     )
       send({ type: 'opaTaskResult', requestId: msg.requestId!, error: 'READ_ONLY' });
+    if (msg.type === 'opaDiffRequest')
+      send({ type: 'opaDiffState', requestId: msg.requestId, error: 'READ_ONLY' });
     refuseReadOnly(msg, send, ctx);
     return;
   }
 
   switch (msg.type) {
+    case 'opaDiffRequest':
+      send(diffReply(store, msg));
+      break;
     case 'opaWorktreeCommand':
       try {
         executeWorktreeCommand(store, msg);

@@ -1,4 +1,47 @@
 export const ru: Record<string, string> = {
+  'Git diff': 'Изменения Git',
+  'Target commit': 'Конечный коммит',
+  'Recorded commit range': 'Сохранённый диапазон коммитов',
+  'Current changes, not a historical dirty snapshot':
+    'Текущие изменения; исторический снимок файлов не сохранён',
+  'Current HEAD or branch differs from the saved attempt. The committed range remains anchored to its recorded commits.':
+    'Текущие HEAD или ветка отличаются от сохранённой попытки. Диапазон изменений привязан к записанным коммитам.',
+  'Changes may include edits made outside this run. Historical dirty file contents were not saved. Binary and untracked contents are not captured by this text snapshot.':
+    'Изменения могут включать правки вне этого запуска. Историческое содержимое изменённых файлов не сохранялось. Двоичные и неотслеживаемые файлы не входят в текстовый снимок.',
+  'Git filters are disabled. Text comparison uses raw file contents, not filtered content.':
+    'Git-фильтры отключены. Сравнивается исходное содержимое файлов без обработки фильтрами.',
+  'Selected file diff': 'Изменения выбранного файла',
+  'Binary file: text preview unavailable.': 'Двоичный файл: текстовый просмотр недоступен.',
+  'Untracked file: contents are not read by this viewer.':
+    'Неотслеживаемый файл: просмотрщик не читает его содержимое.',
+  'Preview truncated at 128 Ki characters.': 'Просмотр ограничен 128 Ки символов.',
+  'Open current file in VS Code': 'Открыть текущий файл в VS Code',
+  'Show recorded commit diff': 'Изменения сохранённых коммитов',
+  'Show current changes': 'Показать текущие изменения',
+  'Reading diff…': 'Читаю изменения…',
+  Files: 'Файлы',
+  Untracked: 'Не отслеживается',
+  Binary: 'Двоичный',
+  'Read-only. Opening or refreshing a diff does not stage, commit, merge, approve or run checks.':
+    'Только просмотр. Открытие и обновление не индексируют файлы, не создают коммиты, не выполняют слияние, не дают разрешений и не запускают проверки.',
+  'Diff contents require the host control link or the VS Code extension.':
+    'Для просмотра содержимого нужна управляющая ссылка хоста или расширение VS Code.',
+  'No verified end commit was recorded. Historical committed changes are unavailable.':
+    'Подтверждённый конечный коммит не записан. Исторические изменения коммитов недоступны.',
+  'The saved Git context is unavailable, moved or deleted. No substitute worktree was used.':
+    'Сохранённый контекст Git недоступен, перемещён или удалён. Другой worktree не подставляется.',
+  'Changes differ from the displayed snapshot. Refresh the file list.':
+    'Изменения отличаются от показанного снимка. Обновите список файлов.',
+  'Git or file contents changed while reading. Refresh the file list.':
+    'Git или содержимое файлов изменились во время чтения. Обновите список файлов.',
+  'The diff exceeds the 2 MiB read limit. Review it in your local Git client.':
+    'Изменения превышают ограничение чтения 2 МиБ. Просмотрите их в локальном Git-клиенте.',
+  'More than 200 files changed. Review this diff in your local Git client.':
+    'Изменено более 200 файлов. Просмотрите изменения в локальном Git-клиенте.',
+  'Diff could not be read. Check the connection and saved Git context.':
+    'Не удалось прочитать изменения. Проверьте соединение и сохранённый контекст Git.',
+  'Quality checks and artifacts: not recorded in this increment.':
+    'Проверки качества и артефакты: в этом инкременте не записываются.',
   'Task worktree': 'Worktree задачи',
   'Setup is separate from Start. No automatic merge or cleanup; one run per repository remains the limit.':
     'Настройка не запускает агента. Слияние и очистка выполняются вручную; одновременно допускается один запуск на репозиторий.',
