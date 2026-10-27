@@ -54,6 +54,7 @@ import { executeTaskCommand, stopTaskExecutions } from '../../server/src/opa/exe
 import { gitContextReply } from '../../server/src/opa/gitContext.js';
 import { historyReply } from '../../server/src/opa/history.js';
 import { saveProjectLayout } from '../../server/src/opa/projectLayouts.js';
+import { qualityReply, stopQualityChecks } from '../../server/src/opa/quality.js';
 import { executeQueueCommand } from '../../server/src/opa/queue.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from '../../server/src/opa/work.js';
 import { executeWorktreeCommand } from '../../server/src/opa/worktree.js';
@@ -470,7 +471,9 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = getWebviewContent(webviewView.webview, this.extensionUri);
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === 'opaDiffRequest') {
+      if (message.type === 'opaQualityCommand') {
+        this.webview?.postMessage(qualityReply(this.store, message));
+      } else if (message.type === 'opaDiffRequest') {
         this.webview?.postMessage(diffReply(this.store, message));
       } else if (message.type === 'opaGitContextRequest') {
         this.webview?.postMessage(gitContextReply(this.store, message));
@@ -1202,6 +1205,7 @@ export class PixelAgentsViewProvider implements vscode.WebviewViewProvider {
   }
 
   dispose() {
+    stopQualityChecks(this.store);
     stopTaskExecutions(this.store);
     this.pixelAgentsServer?.stop();
     this.pixelAgentsServer = null;

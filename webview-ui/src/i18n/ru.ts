@@ -1,4 +1,33 @@
 export const ru: Record<string, string> = {
+  'Check accepted. Refresh to see its recorded outcome.':
+    'Проверка принята. Обновите, чтобы увидеть записанный результат.',
+  'Quality Gates': 'Проверки качества',
+  'Local commands require a separate confirmation for each run. Saving and refreshing do not execute them.':
+    'Для каждого запуска нужно отдельное подтверждение. Сохранение и обновление ничего не запускают.',
+  'Refresh checks': 'Обновить проверки',
+  'Add trusted local check': 'Добавить доверенную локальную проверку',
+  'Check name': 'Название проверки',
+  'Absolute executable path': 'Полный путь к программе',
+  'Arguments as JSON array': 'Аргументы в виде JSON-массива',
+  'Timeout in milliseconds': 'Таймаут в миллисекундах',
+  'Save check without running': 'Сохранить без запуска',
+  'Review run': 'Посмотреть команду',
+  'Skip check': 'Пропустить проверку',
+  'Remove check': 'Удалить проверку',
+  'Confirm local command': 'Подтвердить локальную команду',
+  'File fingerprint': 'Отпечаток файлов',
+  'Configuration digest': 'Отпечаток настроек',
+  'Executable digest': 'Отпечаток программы',
+  'Runs with your local permissions, without a sandbox. Review the command and project scripts. Approval expires in 60 seconds.':
+    'Команда выполняется с вашими локальными правами, без песочницы. Проверьте её и скрипты проекта. Подтверждение действует 60 секунд.',
+  'Approve and run once': 'Подтвердить один запуск',
+  'Tests executed and test count: unreported. Exit zero alone does not establish test coverage.':
+    'Запуск и число тестов не подтверждены. Код выхода 0 сам по себе не подтверждает покрытие тестами.',
+  'Output truncated at 8192 characters per stream.':
+    'Вывод ограничен 8192 символами для каждого потока.',
+  'Cancel check': 'Отменить проверку',
+  'Refresh to observe completion and freshness. Ignored files, dependencies, environment and external symlink targets are outside the fingerprint. This is not a hermetic snapshot.':
+    'Обновите, чтобы увидеть завершение и актуальность. Игнорируемые файлы, зависимости, окружение и внешние цели символических ссылок не входят в отпечаток. Полная изоляция состояния не обеспечивается.',
   'Git diff': 'Изменения Git',
   'Target commit': 'Конечный коммит',
   'Recorded commit range': 'Сохранённый диапазон коммитов',

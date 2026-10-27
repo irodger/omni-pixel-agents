@@ -15,6 +15,7 @@ export type ServerMessage =
   | OpaEventHistoryPage
   | OpaAttentionState
   | OpaGitContextState
+  | OpaQualityState
   | OpaDiffState
   | ProviderCapabilities
   | AgentCreated
@@ -64,6 +65,7 @@ export type ClientMessage =
   | OpaEventHistoryRequest
   | OpaAttentionRequest
   | OpaGitContextRequest
+  | OpaQualityCommand
   | OpaDiffRequest
   | WebviewReady
   | LaunchAgent
@@ -391,6 +393,82 @@ export interface OpaGitContextState {
   projectPath?: string;
   context?: OpaGitContext;
   error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaQualityState {
+  type: 'opaQualityState';
+  requestId: string;
+  config?: OpaQualityConfig;
+  runs?: OpaQualityRun[];
+  plan?: OpaQualityPlan;
+  checkRunId?: string;
+  error?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaQualityConfig {
+  projectPath: string;
+  revision: number;
+  checks: OpaQualityProfile[];
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaQualityProfile {
+  id: string;
+  name: string;
+  executable: string;
+  args: string[];
+  timeoutMs: number;
+  additionalProperties?: Record<string, any>;
+}
+
+export interface OpaQualityRun {
+  id: string;
+  expiresAt: number;
+  projectPath: string;
+  taskId: string;
+  runId: string;
+  cwd: string;
+  repoId: string;
+  base: string;
+  head: string;
+  fingerprint: string;
+  program: string;
+  configDigest: string;
+  check: OpaQualityProfile;
+  checkRunId: string;
+  state: OpaQualityRunState;
+  reason?: string;
+  startedAt: number;
+  spawnedAt?: number;
+  finishedAt?: number;
+  exitCode?: number;
+  signal?: string;
+  stdout: string;
+  stderr: string;
+  truncated: boolean;
+  stale?: boolean;
+  tests: 'unreported';
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaQualityRunState = 'running' | 'passed' | 'failed' | 'unknown' | 'skipped';
+
+export interface OpaQualityPlan {
+  id: string;
+  expiresAt: number;
+  projectPath: string;
+  taskId: string;
+  runId: string;
+  cwd: string;
+  repoId: string;
+  base: string;
+  head: string;
+  fingerprint: string;
+  program: string;
+  configDigest: string;
+  check: OpaQualityProfile;
   additionalProperties?: Record<string, any>;
 }
 
@@ -824,6 +902,24 @@ export interface OpaGitContextRequest {
   projectPath: string;
   additionalProperties?: Record<string, any>;
 }
+
+export interface OpaQualityCommand {
+  type: 'opaQualityCommand';
+  requestId: string;
+  action: OpaQualityAction;
+  projectPath: string;
+  taskId?: string;
+  runId?: string;
+  expectedRevision?: number;
+  checks?: OpaQualityProfile[];
+  checkId?: string;
+  planId?: string;
+  approved?: boolean;
+  checkRunId?: string;
+  additionalProperties?: Record<string, any>;
+}
+
+export type OpaQualityAction = 'save' | 'query' | 'prepare' | 'run' | 'cancel' | 'skip';
 
 export interface OpaDiffRequest {
   type: 'opaDiffRequest';
