@@ -84,6 +84,7 @@ components:
         - $ref: '#/components/schemas/OpaEventHistoryPage'
         - $ref: '#/components/schemas/OpaAttentionState'
         - $ref: '#/components/schemas/OpaGitContextState'
+        - $ref: '#/components/schemas/OpaQualityState'
         - $ref: '#/components/schemas/OpaDiffState'
         # Provider capabilities
         - $ref: '#/components/schemas/ProviderCapabilities'
@@ -146,6 +147,7 @@ components:
         - $ref: '#/components/schemas/OpaEventHistoryRequest'
         - $ref: '#/components/schemas/OpaAttentionRequest'
         - $ref: '#/components/schemas/OpaGitContextRequest'
+        - $ref: '#/components/schemas/OpaQualityCommand'
         - $ref: '#/components/schemas/OpaDiffRequest'
         - $ref: '#/components/schemas/WebviewReady'
         - $ref: '#/components/schemas/LaunchAgent'
@@ -1933,7 +1935,25 @@ components:
       enum: [committed, working]
     OpaDiffSnapshot:
       type: object
-      required: [version, projectPath, taskId, runId, mode, cwd, base, head, observedHead, observedAt, snapshot, stale, filtersDisabled, historicalDirtyUnavailable, limited, files]
+      required:
+        [
+          version,
+          projectPath,
+          taskId,
+          runId,
+          mode,
+          cwd,
+          base,
+          head,
+          observedHead,
+          observedAt,
+          snapshot,
+          stale,
+          filtersDisabled,
+          historicalDirtyUnavailable,
+          limited,
+          files,
+        ]
       properties:
         version: { type: number }
         projectPath: { type: string }
@@ -1965,3 +1985,143 @@ components:
         binary: { type: boolean }
         untracked: { type: boolean }
         openPath: { type: string }
+
+    OpaQualityProfile:
+      type: object
+      required: [id, name, executable, args, timeoutMs]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        executable: { type: string }
+        args: { type: array, items: { type: string } }
+        timeoutMs: { type: number }
+
+    OpaQualityConfig:
+      type: object
+      required: [projectPath, revision, checks]
+      properties:
+        projectPath: { type: string }
+        revision: { type: number }
+        checks: { type: array, items: { $ref: '#/components/schemas/OpaQualityProfile' } }
+
+    OpaQualityPlan:
+      type: object
+      required:
+        [
+          id,
+          expiresAt,
+          projectPath,
+          taskId,
+          runId,
+          cwd,
+          repoId,
+          base,
+          head,
+          fingerprint,
+          program,
+          configDigest,
+          check,
+        ]
+      properties:
+        id: { type: string }
+        expiresAt: { type: number }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        cwd: { type: string }
+        repoId: { type: string }
+        base: { type: string }
+        head: { type: string }
+        fingerprint: { type: string }
+        program: { type: string }
+        configDigest: { type: string }
+        check: { $ref: '#/components/schemas/OpaQualityProfile' }
+
+    OpaQualityRun:
+      type: object
+      required:
+        [
+          id,
+          expiresAt,
+          projectPath,
+          taskId,
+          runId,
+          cwd,
+          repoId,
+          base,
+          head,
+          fingerprint,
+          program,
+          configDigest,
+          check,
+          checkRunId,
+          state,
+          startedAt,
+          stdout,
+          stderr,
+          truncated,
+          tests,
+        ]
+      properties:
+        id: { type: string }
+        expiresAt: { type: number }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        cwd: { type: string }
+        repoId: { type: string }
+        base: { type: string }
+        head: { type: string }
+        fingerprint: { type: string }
+        program: { type: string }
+        configDigest: { type: string }
+        check: { $ref: '#/components/schemas/OpaQualityProfile' }
+        checkRunId: { type: string }
+        state: { $ref: '#/components/schemas/OpaQualityRunState' }
+        reason: { type: string }
+        startedAt: { type: number }
+        spawnedAt: { type: number }
+        finishedAt: { type: number }
+        exitCode: { type: number }
+        signal: { type: string }
+        stdout: { type: string }
+        stderr: { type: string }
+        truncated: { type: boolean }
+        stale: { type: boolean }
+        tests: { type: string, const: unreported }
+
+    OpaQualityCommand:
+      type: object
+      required: [type, requestId, action, projectPath]
+      properties:
+        type: { type: string, const: opaQualityCommand }
+        requestId: { type: string }
+        action: { $ref: '#/components/schemas/OpaQualityAction' }
+        projectPath: { type: string }
+        taskId: { type: string }
+        runId: { type: string }
+        expectedRevision: { type: number }
+        checks: { type: array, items: { $ref: '#/components/schemas/OpaQualityProfile' } }
+        checkId: { type: string }
+        planId: { type: string }
+        approved: { type: boolean }
+        checkRunId: { type: string }
+
+    OpaQualityState:
+      type: object
+      required: [type, requestId]
+      properties:
+        type: { type: string, const: opaQualityState }
+        requestId: { type: string }
+        config: { $ref: '#/components/schemas/OpaQualityConfig' }
+        runs: { type: array, items: { $ref: '#/components/schemas/OpaQualityRun' } }
+        plan: { $ref: '#/components/schemas/OpaQualityPlan' }
+        checkRunId: { type: string }
+        error: { type: string }
+
+    OpaQualityRunState:
+      type: string
+      enum: [running, passed, failed, unknown, skipped]
+    OpaQualityAction:
+      type: string
+      enum: [save, query, prepare, run, cancel, skip]

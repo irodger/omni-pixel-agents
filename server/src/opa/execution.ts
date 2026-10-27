@@ -17,6 +17,7 @@ import { discoverAdapters } from './adapters/registry.js';
 import { observeGitContext } from './gitContext.js';
 import { HistoryError } from './history.js';
 import { OpaOffice } from './office.js';
+import { qualityRepositoryBusy } from './quality.js';
 import { changeTask, opaWorkSnapshot, taskQueue, updateTaskExecution, WorkError } from './work.js';
 import { resolveTaskDirectory } from './worktree.js';
 
@@ -131,6 +132,8 @@ export function validateTaskStart(
   if (expectedRevision !== task.revision) throw new WorkError('TASK_CONFLICT');
   if (isTaskRunning(store, task)) throw new WorkError('TASK_RUNNING');
   const directory = resolveTaskDirectory(task);
+  if (qualityRepositoryBusy(store, directory.gitContext.commonDir))
+    throw new WorkError('PROJECT_BUSY');
   if (
     [...(runs.get(store)?.values() ?? [])].some(
       (owner) =>
@@ -444,4 +447,10 @@ export function isTaskRunning(store: AgentStateStore, task: OpaTask) {
 
 export function stopTaskExecutions(store: AgentStateStore) {
   for (const run of runs.get(store)?.values() ?? []) run.stop();
+}
+
+export function taskRepositoryBusy(store: AgentStateStore, repoId: string) {
+  return [...(runs.get(store)?.values() ?? [])].some(
+    (o) => o.repoId && toPathKey(o.repoId) === toPathKey(repoId),
+  );
 }

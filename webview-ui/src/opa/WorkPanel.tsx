@@ -8,6 +8,7 @@ import { DiffPanel } from './DiffPanel.js';
 import { GitContextPanel } from './GitContextPanel.js';
 import { TASK_DRAG_TYPE, taskDragData, taskFromDrop, taskMoveCommand } from './kanban.js';
 import { LinkControls } from './LinkControls.js';
+import { QualityPanel } from './QualityPanel.js';
 import { taskError } from './taskErrors.js';
 import { TaskHistory } from './TaskHistory.js';
 import { TaskQueuePanel } from './TaskQueuePanel.js';
@@ -143,6 +144,14 @@ export function WorkPanel({
           taskId={task.id}
           saved={task.execution?.gitContext}
           after={task.execution?.gitContextAfter}
+        />
+      )}
+      {!selectedRunId && task.execution && task.execution.state !== 'running' && (
+        <QualityPanel
+          key={task.execution.runId + '-quality'}
+          projectPath={task.projectPath}
+          taskId={task.id}
+          runId={task.execution.runId}
         />
       )}
       {!selectedRunId && task.execution && (

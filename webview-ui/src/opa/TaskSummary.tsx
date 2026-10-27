@@ -6,6 +6,7 @@ import { vscodeProjectLink } from './deepLinks.js';
 import { DiffPanel } from './DiffPanel.js';
 import { GitContextPanel } from './GitContextPanel.js';
 import { LinkControls } from './LinkControls.js';
+import { QualityPanel } from './QualityPanel.js';
 import { taskSummary } from './summaryModel.js';
 
 export function TaskSummary({ task, historical = false }: { task: OpaTask; historical?: boolean }) {
@@ -80,6 +81,14 @@ export function TaskSummary({ task, historical = false }: { task: OpaTask; histo
         <p className="opa-notice">
           {t('Result truncated: only the last 8000 characters were retained.')}
         </p>
+      )}
+      {historical && (
+        <QualityPanel
+          key={run.runId + '-quality'}
+          projectPath={task.projectPath}
+          taskId={task.id}
+          runId={run.runId}
+        />
       )}
       {historical && (
         <DiffPanel

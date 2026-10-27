@@ -28,6 +28,7 @@ import { executeTaskCommand } from './opa/execution.js';
 import { gitContextReply } from './opa/gitContext.js';
 import { historyReply } from './opa/history.js';
 import { saveProjectLayout } from './opa/projectLayouts.js';
+import { qualityReply } from './opa/quality.js';
 import { executeQueueCommand } from './opa/queue.js';
 import { opaWorkSnapshot, taskRunsReply, WorkError } from './opa/work.js';
 import { executeWorktreeCommand } from './opa/worktree.js';
@@ -165,6 +166,8 @@ export function handleClientMessage(
       (msg.type === 'saveLayout' && msg.requestId)
     )
       send({ type: 'opaTaskResult', requestId: msg.requestId!, error: 'READ_ONLY' });
+    if (msg.type === 'opaQualityCommand')
+      send({ type: 'opaQualityState', requestId: msg.requestId, error: 'READ_ONLY' });
     if (msg.type === 'opaDiffRequest')
       send({ type: 'opaDiffState', requestId: msg.requestId, error: 'READ_ONLY' });
     refuseReadOnly(msg, send, ctx);
@@ -172,6 +175,9 @@ export function handleClientMessage(
   }
 
   switch (msg.type) {
+    case 'opaQualityCommand':
+      send(qualityReply(store, msg));
+      break;
     case 'opaDiffRequest':
       send(diffReply(store, msg));
       break;

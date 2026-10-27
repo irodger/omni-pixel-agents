@@ -7,6 +7,7 @@ import {
   type OpaAttentionFact,
 } from '../../../core/src/opa/attention.js';
 import type { OpaEvent } from '../../../core/src/opa/events.js';
+import { isQualityData, type QualityData } from '../../../core/src/opa/quality.js';
 import type {
   OpaTask,
   OpaTaskCommand,
@@ -48,6 +49,8 @@ function state(store: AgentStateStore): OpaWorkData {
   let data = states.get(store);
   if (!data) {
     const raw = store.getAdapter()?.loadOpaWork?.();
+    if (raw?.quality !== undefined && !isQualityData(raw.quality))
+      throw new WorkError('QUALITY_HISTORY_INVALID');
     if (raw?.runHistoryVersion !== undefined && raw.runHistoryVersion !== 1)
       throw new WorkError('HISTORY_UNSUPPORTED');
     if (raw?.runs !== undefined && (!Array.isArray(raw.runs) || !raw.runs.every(isTaskRun)))
@@ -121,6 +124,16 @@ function state(store: AgentStateStore): OpaWorkData {
     });
     data = {
       ...raw,
+      quality: raw?.quality
+        ? {
+            ...raw.quality,
+            runs: raw.quality.runs.map((r) =>
+              r.state === 'running'
+                ? { ...r, state: 'unknown' as const, reason: 'Ownership lost after host restart' }
+                : r,
+            ),
+          }
+        : undefined,
       attentionVersion: 1,
       attentionHostId: raw?.attentionHostId ?? randomUUID(),
       attentionFacts: raw?.attentionFacts ?? [],
@@ -581,4 +594,18 @@ export function bindTaskWorktree(
   const next = { ...current, worktree, revision: current.revision + 1, updatedAt: Date.now() };
   if (!isTask(next)) throw new WorkError('WORKTREE_INVALID');
   save(store, { ...data, tasks: data.tasks.map((t) => (t === current ? next : t)) });
+}
+
+/** Privileged callers only: commands and logs can contain private host data. */
+export function qualityData(store: AgentStateStore): QualityData {
+  return structuredClone(state(store).quality ?? { version: 1, configs: [], runs: [] });
+}
+export function saveQualityData(
+  store: AgentStateStore,
+  quality: QualityData,
+  facts: OpaAttentionFact[] = [],
+) {
+  if (!store.getAdapter()?.saveOpaWork || !isQualityData(quality))
+    throw new WorkError('QUALITY_STORAGE_UNAVAILABLE');
+  save(store, { ...appendAttentionFacts(state(store), facts), quality });
 }

@@ -25,6 +25,7 @@ import { opaCampusSnapshot } from './opa/campus.js';
 import { executeTaskCommand, stopTaskExecutions } from './opa/execution.js';
 import { registerEventHistoryRoute } from './opa/historyRoutes.js';
 import { OpaOffice } from './opa/office.js';
+import { stopQualityChecks } from './opa/quality.js';
 import { registerQueueRoute } from './opa/queueRoutes.js';
 import { opaWorkSnapshot, taskRunsPage, WorkError } from './opa/work.js';
 import { toPathKey } from './pathKey.js';
@@ -117,6 +118,7 @@ export async function createHttpServer(options: HttpServerOptions): Promise<Http
   const allowedHostnames = privilegedHostnames(host, options.allowedHosts ?? []);
 
   app.addHook('onClose', async () => {
+    stopQualityChecks(options.store);
     stopTaskExecutions(options.store);
   });
   registerHealthRoute(app);

@@ -75,6 +75,7 @@ export interface OpaUsage {
   cost?: { amount: number; currency: 'USD'; kind: 'reported' | 'estimated' };
 }
 export interface OpaWorkData {
+  quality?: import('./quality.js').QualityData;
   attentionVersion?: 1;
   attentionHostId?: string;
   attentionFacts?: OpaAttentionFact[];
