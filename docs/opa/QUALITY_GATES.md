@@ -1,6 +1,6 @@
 # Local Quality Gates (PR11)
 
-Issue: [#20](https://github.com/irodger/omni-pixel-agents/issues/20).
+Issue: [#20](https://github.com/irodger/omni-pixel-agents/issues/20). Implementation: [PR #34](https://github.com/irodger/omni-pixel-agents/pull/34).
 
 Open **Quality Gates** in a completed task attempt or its saved summary. Refresh loads host-owned check configuration and observations. Add a named check with an **absolute executable path**, JSON string-array argv, and timeout (100–600,000 ms). Configuration belongs to the OPA host's work-state storage, not a repository file. Saving never executes a command. Node 20 or newer remains required; no new optional runtime is installed.
 
